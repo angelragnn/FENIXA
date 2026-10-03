@@ -1,0 +1,19 @@
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Generated SQLite databases and sidecar files
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Dependencies and logs
+node_modules/
+*.log
+npm-debug.log*
+
+# Operating system files
+.DS_Store
+Thumbs.db
