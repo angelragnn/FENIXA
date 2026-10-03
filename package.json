@@ -1,0 +1,15 @@
+{
+  "name": "fenixa-universidad-avance-1",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Primera entrega basica: landing, maquetas de acceso y health con SQLite",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node server/server.mjs",
+    "open": "node scripts/abrir.mjs",
+    "share": "node scripts/abrir.mjs --share",
+    "health": "node scripts/test-health.mjs",
+    "test": "node scripts/test-model.mjs && node scripts/test-health.mjs"
+  }
+}
