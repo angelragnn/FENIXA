@@ -1,0 +1,75 @@
+/* Criterio: asesor de compra, escala visual y estados de decisión. */
+.advisor { max-width:1240px; }
+.advisor-intro { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); gap:72px; padding:35px 0 76px; align-items:start; }
+.advisor-copy { padding-top:28px; }
+.advisor .eyebrow { font-size:10px; letter-spacing:.18em; color:#aaa; }
+.advisor h1 { font-size:clamp(48px,5.1vw,72px); font-weight:550; letter-spacing:-.065em; line-height:1.06; margin:24px 0; }
+.advisor h1 em { font-style:normal; color:#a0a0a0; }
+.advisor-copy .lead { font-size:16px; line-height:1.8; color:#aaa; max-width:465px; }
+.advisor-steps { display:grid; grid-template-columns:1fr; gap:11px; font-size:12px; color:#a5a5a5; margin:28px 0; }
+.advisor-steps b { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border:1px solid #353535; border-radius:50%; margin-right:9px; color:#ddd; font-size:9px; font-weight:450; }
+.advisor-proof { display:flex; flex-wrap:wrap; gap:18px; font-size:10px; color:#888; margin-top:34px; }
+.advisor-proof span::before { content:'·'; color:#ddd; padding-right:7px; }
+.advisor-photos { display:flex; height:205px; align-items:center; gap:22px; margin-top:6px; }
+.advisor-photos img { width:28%; height:180px; object-fit:contain; background:transparent; filter:drop-shadow(0 18px 20px #0008); transition:transform .25s ease; }
+@media(hover:hover) and (pointer:fine){.advisor-copy:hover .advisor-photos img:nth-child(2) { transform:translateY(-5px); }}
+.advisor-form { background:linear-gradient(145deg,#181818,#101010); border:1px solid #363636; border-radius:16px; padding:30px; box-shadow:0 24px 55px #0003; }
+.advisor-form h2 { font-size:27px; line-height:1.25; font-weight:500; letter-spacing:-.04em; margin:17px 0 28px; }
+.advisor-form label { font-size:12px; color:#c1c1c1; }
+.advisor-form input[type=number] { font-size:20px; padding:14px; letter-spacing:-.02em; }
+.budget-presets { display:flex; gap:6px; flex-wrap:wrap; margin:-6px 0 25px; }
+.budget-presets button { width:auto; margin:0; padding:7px 9px; font-size:10px; font-weight:450; border:1px solid #3b3b3b; background:transparent; color:#aaa; }
+.budget-presets button[aria-pressed=true] { background:#2b2b2b; border-color:#777; color:#eee; }
+.advisor-form fieldset { padding:0; border:0; margin:24px 0; min-width:0; }
+.advisor-form legend { font-size:12px; color:#c1c1c1; margin-bottom:12px; }
+.advisor-form .use-choice { display:flex; align-items:center; gap:13px; padding:14px; border:1px solid #343434; border-radius:9px; cursor:pointer; margin-bottom:8px; transition:border-color .15s,background .15s; }
+@media(hover:hover) and (pointer:fine){.use-choice:hover { border-color:#666; }}
+.use-choice:has(input:checked) { background:#262626; border-color:#8b8b8b; }
+.use-choice input { width:15px; accent-color:#e0e0e0; }
+.use-choice small { font-size:10px; display:block; margin-top:5px; color:#a0a0a0; }
+.advisor-form textarea { min-height:75px; font-size:12px; line-height:1.6; }
+.advisor-form button[type=submit] { width:100%; margin-top:5px; padding:14px; font-size:13px; }
+.advisor-hint { font-size:10px; color:#989898; line-height:1.8; margin:16px 0 0; }
+#advisor-status { font-size:12px; color:#ccc; line-height:1.7; }
+#advisor-status:empty { display:none; }
+.advisor-how { border-top:1px solid #292929; padding:64px 0; }
+.advisor-how h2,#results-title,.advisor-faq h2 { font-size:clamp(30px,3.5vw,43px); font-weight:500; letter-spacing:-.05em; line-height:1.2; }
+.advisor-how>div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:45px; margin-top:38px; }
+.advisor-how article { border-top:1px solid #303030; padding-top:20px; }
+.advisor-how article>span { color:#888; font-size:11px; }
+.advisor-how h3 { font-size:18px; font-weight:500; }
+.advisor-how p { font-size:13px; color:#aaa; line-height:1.8; }
+#advice-results { scroll-margin-top:25px; padding:32px 0 50px; border-top:1px solid #444; }
+.results-heading { display:flex; justify-content:space-between; gap:20px; align-items:center; }
+.edit-needs { font-size:12px; text-decoration:none; color:#bbb; white-space:nowrap; }
+.needs-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid #303030; border-radius:10px; padding:22px 0; margin:24px 0; background:#111; }
+.needs-summary>div { padding:0 24px; border-right:1px solid #333; }
+.needs-summary>div:last-child { border:0; }
+.needs-summary small { display:block; font-size:10px; color:#999; margin-bottom:9px; }
+.needs-summary strong { font-size:18px; font-weight:500; color:#eee; }
+#advice-notice { font-size:13px; color:#aaa; line-height:1.8; max-width:850px; }
+.result-comparison { border-bottom:1px solid #303030; padding:16px 0; font-size:12px; color:#ccc; }
+.result-comparison summary { cursor:pointer; }
+.result-comparison table { margin:18px 0; font-size:12px; }
+.advice-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin:28px 0 0; align-items:stretch; }
+.advice-card { display:flex; flex-direction:column; border:1px solid #343434; background:#121212; padding:22px; border-radius:12px; min-width:0; }
+.advice-card-top { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.advice-card-top>span:first-child { font-size:9px; letter-spacing:.12em; color:#888; }
+.advice-state { font-size:9px; border:1px solid #454545; padding:6px 8px; border-radius:5px; color:#bbb; }
+.advice-state.within_reference { color:#eee; border-color:#777; background:#252525; }
+.advice-card h3 { font-size:23px; font-weight:500; letter-spacing:-.04em; margin:20px 0 8px; }
+.advice-card p,.advice-card li { font-size:12px; color:#aaa; line-height:1.8; }
+.advice-card>strong { font-size:28px; font-weight:500; letter-spacing:-.04em; display:block; }
+.advice-card>small { font-size:10px; margin-top:6px; }
+.advice-card ul { padding-left:17px; }
+.advice-card details { font-size:11px; color:#bbb; margin:18px 0 24px; }
+.advice-card details summary { cursor:pointer; }
+.advice-card>button { font-size:11px; margin-top:auto; white-space:normal; line-height:1.5; }
+.option-photos { display:flex; gap:10px; height:135px; margin:18px 0; align-items:center; }
+.option-photos img { width:30%; height:120px; object-fit:contain; background:transparent; }
+.advisor-faq { display:grid; grid-template-columns:1fr 1fr; gap:60px; padding:60px 0 20px; border-top:1px solid #292929; }
+.advisor-faq details { border-bottom:1px solid #333; padding:20px 0; }
+.advisor-faq summary { font-size:14px; cursor:pointer; }
+.advisor-faq p { font-size:13px; color:#aaa; line-height:1.8; }
+@media(max-width:1000px) { .advisor-intro { gap:35px; grid-template-columns:minmax(0,1fr) 380px; }.advisor h1 { font-size:55px; }.advice-options { grid-template-columns:1fr; }.option-photos { max-width:360px; }.advice-card>button { align-self:flex-start; }.advisor-photos { height:170px; }.advisor-photos img { height:150px; } }
+@media(max-width:750px) { .advisor-intro { grid-template-columns:1fr; padding:0 0 40px; gap:24px; }.advisor-copy { padding-top:12px; }.advisor h1 { font-size:48px; }.advisor-photos { height:140px; }.advisor-photos img { height:125px; }.advisor-proof { font-size:9px; gap:10px; }.advisor-form { padding:24px; }.advisor-how>div,.advisor-faq { grid-template-columns:1fr; gap:22px; }.advisor-how { padding:38px 0; }.results-heading { display:block; }.edit-needs { display:inline-block; margin:0 0 16px; }.needs-summary { grid-template-columns:1fr; padding:8px 20px; }.needs-summary>div { border-right:0; border-bottom:1px solid #333; padding:15px 0; }.needs-summary strong { font-size:17px; }.advisor-faq { padding-top:35px; }header nav { flex-wrap:wrap; gap:12px; }header .brand { font-size:18px; } }

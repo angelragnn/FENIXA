@@ -1,0 +1,247 @@
+/* ==========================================================================
+   Criterio · capa nativa (iOS)
+   Se carga DESPUÉS de style.css y advisor.css. No cambia la paleta negra,
+   gris y blanca: cambia cómo se siente la página en un teléfono.
+   Fuente: bóveda Obsidian «Emil Kowalski Skills» → apple-design,
+   mobile-native y animate. Cada bloque dice qué regla aplica.
+   ========================================================================== */
+
+/* 1. Fichas (tokens) -------------------------------------------------------
+   animate: «usa curvas fuertes, no las de CSS por defecto».
+   apple-design §15: fuente del sistema primero (SF en iPhone/Mac,
+   Segoe UI en Windows). */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --press: 120ms;
+  --tap: 44px;                 /* objetivo táctil mínimo de Apple */
+  --bar-h: 56px;               /* alto de la barra de pestañas */
+  --label: #f2f2f2;
+  --label-2: #b4b4b4;          /* 7.9:1 sobre #121212 */
+  --label-3: #8e8e93;          /* 5.7:1 sobre #121212: el gris más claro permitido para texto */
+  --glass: rgba(9, 9, 9, 0.72);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --gutter: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Inter, Roboto, sans-serif;
+  font-optical-sizing: auto;
+}
+
+/* 2. Base móvil -------------------------------------------------------------
+   mobile-native «Baseline»: sin destello gris al tocar, sin inflar
+   el texto en horizontal. No bloqueamos el zoom (eso sería un fallo
+   de accesibilidad): quitamos su causa (campos < 16px). */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 88px;    /* el encabezado fijo no tapa los anclajes */
+}
+input, select, textarea { font-size: 16px; }
+@media (pointer: fine) {
+  .decision-filters input, .decision-filters select, .advisor-form textarea, #components select { font-size: 14px; }
+}
+
+/* Los controles no seleccionan su texto con una pulsación larga
+   (mobile-native §8). El contenido sí sigue siendo seleccionable. */
+button, .button, .tabbar a, summary, .budget-presets button {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+a { touch-action: manipulation; }
+
+/* 3. Respuesta inmediata -----------------------------------------------------
+   apple-design §1: la reacción ocurre al PRESIONAR, no al soltar.
+   Solo transform + color: nada de `transition: all`. */
+button, .button, .tabbar a, .use-choice, .piece-overview button {
+  transition:
+    transform var(--press) var(--ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+button:active:not(:disabled), .button:active { transform: scale(0.97); }
+.use-choice:active, .piece-overview button:active { transform: scale(0.99); }
+.tabbar a:active { transform: scale(0.94); }
+
+/* 4. Objetivos táctiles de 44 px --------------------------------------------
+   La auditoría encontró botones de 28–40 px, enlaces de 17 px y
+   resúmenes (summary) de 15 px. El texto se mantiene; crece el área. */
+button, .button, select, input:not([type=radio]):not([type=checkbox]):not([type=file]) { min-height: var(--tap); }
+button, .button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.advice-card > button, .build-tray > button, .piece-overview button { justify-content: flex-start; }
+header nav a, header > a:not(.brand), .edit-needs, .app-sidebar a {
+  display: inline-flex; align-items: center; min-height: var(--tap);
+}
+.brand { display: inline-block; line-height: var(--tap); } /* inline-block conserva el espacio antes de « / asesor» */
+summary { display: flex; align-items: center; min-height: var(--tap); list-style-position: inside; }
+summary::-webkit-details-marker { margin-right: 8px; }
+.catalog-card button, .tray-part button, .draft-notice button, .reference-builds button { min-height: var(--tap); padding-inline: 14px; }
+.tray-part button { min-width: var(--tap); }
+.use-choice input { width: 20px; height: 20px; flex-shrink: 0; }
+/* Enlaces sueltos (fuentes, ofertas, «Crea tu cuenta»): no están dentro de
+   un párrafo, así que también necesitan su área de 44 px. */
+.catalog-card a, #switch a { display: inline-flex; align-items: center; min-height: var(--tap); }
+header nav a { justify-content: center; min-width: var(--tap); padding-inline: 6px; }
+label small { font-size: 12px; }
+.advisor-form .use-choice { min-height: 64px; }
+
+/* 5. Presupuesto como control segmentado (patrón conocido de iOS) ----------
+   apple-design §16 «Familiaridad»: usar lo que la gente ya sabe usar. */
+.budget-presets {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px;
+  padding: 2px; margin: -6px 0 25px; border-radius: 9px; background: #1f1f1f;
+}
+.budget-presets button {
+  min-height: 36px; padding: 6px 4px; border: 0; border-radius: 7px;
+  font-size: 13px; color: var(--label-2); background: transparent;
+}
+.budget-presets button[aria-pressed=true] { background: #3a3a3c; color: var(--label); border: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+/* El segmento mide 36 px de alto, pero su área táctil sí llega a 44 px: */
+.budget-presets button { position: relative; }
+.budget-presets button::after { content: ""; position: absolute; inset: -4px 0; }
+
+/* 6. Tipografía y contraste --------------------------------------------------
+   apple-design §15: tracking según el tamaño (negativo en títulos,
+   levemente positivo en texto pequeño) y nada por debajo de 12 px.
+   Los grises #666/#777 fallaban 4.5:1 → --label-3. */
+.brand span, .sidebar-caption, .sidebar-note { color: var(--label-3); }
+.brand span { font-size: 12px; }
+/* Rediseño: sin etiquetas en MAYÚSCULAS espaciadas (señal típica de «diseño IA»).
+   Ahora son etiquetas normales, en gris, en minúscula de oración. */
+.advisor .eyebrow, .eyebrow, .sidebar-caption, .build-tray > span, .advice-card-top > span:first-child, .proposal span {
+  font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--label-3);
+}
+.advisor-steps { font-size: 14px; }
+.advisor-steps b, .advisor-how article > span { font-size: 12px; }
+.advisor-steps b { width: 28px; height: 28px; }
+.advisor-proof, .advisor-hint, .use-choice small, .needs-summary small, .advice-card > small,
+.advice-state, .catalog-card > span, .catalog-card small, .tray-part small, .piece-overview small,
+.proposal > small, #decision-results, .save-state, .decision-filters label, .dashboard-heading p,
+.catalog-actions, .tray-part strong, .piece-overview strong, .advice-card details, .build-tray > p, .build-tray > small {
+  font-size: 12px; letter-spacing: .01em;
+}
+.advisor-form label, .advisor-form legend, .advice-card p, .advice-card li, .advice-card > button,
+.dashboard-heading button, .draft-notice p, .catalog-card details > p, .proposal p, #advice-notice { font-size: 14px; }
+.advice-card p, .advice-card li, .advisor-how p, .advisor-faq p { color: var(--label-2); }
+.advisor-proof, .advisor-hint, .use-choice small, .needs-summary small { color: var(--label-3); }
+/* UI cheatsheet: las cifras no «bailan» cuando cambian. */
+.advice-card > strong, .needs-summary strong, .proposal strong, .catalog-card > strong,
+.advisor-form input[type=number], #reference-total, td { font-variant-numeric: tabular-nums; }
+.lead, .advisor-how p, .advisor-faq p, #advice-notice { max-width: 65ch; }
+
+/* 7. Material translúcido: encabezado -----------------------------------------
+   apple-design §12: la barra flota y el contenido pasa por debajo.
+   En lugar de una línea dura, un borde de luz muy tenue. */
+header {
+  position: sticky; top: 0; z-index: 20; max-width: none; margin: 0;
+  padding-top: max(18px, env(safe-area-inset-top, 0px));
+  padding-bottom: 14px;
+  padding-inline: max(28px, calc((100% - 1240px) / 2 + 28px));
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid var(--glass-edge);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  header { background: #0c0c0c; }
+}
+#advice-results { scroll-margin-top: 88px; }
+.build-tray { top: 88px; }
+
+/* 8. Barra de pestañas inferior (solo teléfono) ------------------------------
+   Plataforma iOS: la navegación principal va abajo, al alcance del pulgar,
+   con etiquetas específicas («Asesor», no «Inicio») y zona segura. */
+.tabbar { display: none; }
+@media (max-width: 700px) {
+  body { padding-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px)); }
+  header { padding-inline: var(--gutter) var(--gutter-r); padding-bottom: 10px; }
+  main { padding-left: var(--gutter); padding-right: var(--gutter-r); }
+  /* Los enlaces que ya están en la barra salen del encabezado. */
+  header nav a[href="/"], header nav a[href="/catalog"], header nav a[href="/dashboard"],
+  header nav a[href="#como"], header > a:not(.brand) { display: none; }
+  .app-sidebar { display: none; }
+  .tabbar {
+    position: fixed; inset: auto 0 0 0; z-index: 30;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    padding: 4px max(8px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-right, 0px));
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+    border-top: 1px solid var(--glass-edge);
+  }
+  .tabbar a {
+    display: grid; justify-items: center; align-content: center; gap: 3px;
+    min-height: var(--bar-h); color: var(--label-3); text-decoration: none;
+    font-size: 11px; font-weight: 500; letter-spacing: .01em;
+  }
+  .tabbar a[aria-current="page"] { color: var(--label); }
+  .tabbar svg { width: 24px; height: 24px; }
+  footer { padding-left: var(--gutter); padding-right: var(--gutter-r); }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar { background: #0c0c0c; }
+}
+
+/* 9. Comparación técnica: hoja inferior en el teléfono -----------------------
+   animate RECIPES: modal centrado en escritorio (opacity + scale .96,
+   250 ms); en el teléfono, hoja que sube desde abajo con la curva tipo
+   iOS y se cierra por el mismo camino (consistencia espacial). */
+dialog { overscroll-behavior: contain; }
+dialog[open] { opacity: 1; transform: none; }
+dialog {
+  transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out),
+    overlay 250ms allow-discrete, display 250ms allow-discrete;
+}
+@starting-style { dialog[open] { opacity: 0; transform: scale(0.96); } }
+dialog:not([open]) { opacity: 0; transform: scale(0.96); }
+dialog::backdrop { background: rgba(0, 0, 0, .7); transition: opacity 250ms var(--ease-out), overlay 250ms allow-discrete, display 250ms allow-discrete; }
+@starting-style { dialog[open]::backdrop { opacity: 0; } }
+@media (max-width: 700px) {
+  dialog {
+    width: 100%; max-width: none; max-height: 88dvh; margin: auto 0 0; inset: auto 0 0 0;
+    border-radius: 16px 16px 0 0; border-bottom: 0;
+    padding: 12px var(--gutter-r) calc(20px + env(safe-area-inset-bottom, 0px)) var(--gutter);
+    transition: transform 400ms var(--ease-drawer), overlay 400ms allow-discrete, display 400ms allow-discrete;
+  }
+  dialog::before { content: ""; display: block; width: 36px; height: 5px; border-radius: 3px; background: #48484a; margin: 0 auto 12px; }
+  @starting-style { dialog[open] { opacity: 1; transform: translateY(100%); } }
+  dialog:not([open]) { opacity: 1; transform: translateY(100%); }
+}
+/* «Cerrar» arriba, como en las hojas de iOS: el foco inicial cae en la
+   cabecera y la hoja abre mostrando su título. */
+.sheet-head { position: sticky; top: -12px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -12px 0 0; padding: 12px 0 8px; background: inherit; }
+.sheet-head h2 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+.table-scroll { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+
+/* 10. Resultados del asesor: aparición escalonada ------------------------------
+   animate: ocurre pocas veces por sesión → animación estándar permitida.
+   Propósito: evitar que tres tarjetas «teletransporten». 8 px + opacidad,
+   300 ms ease-out, 50 ms entre tarjetas. Nunca bloquea la interacción. */
+@keyframes criterio-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.advice-options .advice-card { animation: criterio-in 300ms var(--ease-out) both; }
+.advice-options .advice-card:nth-child(2) { animation-delay: 50ms; }
+.advice-options .advice-card:nth-child(3) { animation-delay: 100ms; }
+.needs-summary { animation: criterio-in 250ms var(--ease-out) both; }
+
+/* 11. Preferencias del sistema -------------------------------------------------
+   apple-design §14: movimiento reducido = más suave, no cero. */
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled), .button:active, .use-choice:active, .piece-overview button:active, .tabbar a:active { transform: none; }
+  @keyframes criterio-in { from { opacity: 0; } to { opacity: 1; } }
+  dialog, dialog:not([open]) { transform: none !important; transition: opacity 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete; }
+  @starting-style { dialog[open] { opacity: 0; transform: none; } }
+  dialog:not([open]) { opacity: 0; }
+  .advisor-photos img { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  header, .tabbar { background: #0c0c0c; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  :root { --label-2: #d6d6d6; --label-3: #b4b4b4; --glass-edge: rgba(255, 255, 255, .35); }
+  header, .tabbar { background: #050505; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .advice-card, .panel, .use-choice, .budget-presets { border-color: #8e8e93; }
+}

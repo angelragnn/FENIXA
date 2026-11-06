@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#090909"><meta name="color-scheme" content="dark"><meta name="apple-mobile-web-app-title" content="Criterio">
+<link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/advisor.css"><link rel="stylesheet" href="/assets/native.css"><link rel="stylesheet" href="/assets/home.css">
+<title>Criterio · Elige tu próximo computador</title>
+</head>
+<body class="home">
+<header><a class="brand" href="/">criterio<span> / asesor de compra</span></a><nav><a href="/catalog">Catálogo</a><a href="/dashboard">Mis decisiones</a></nav></header>
+<main class="advisor">
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <h1 id="hero-title">¿Qué PC te alcanza con tu presupuesto?</h1>
+    <p class="lead">Escribe cuánto tienes y para qué la vas a usar. Te mostramos hasta tres equipos armados con piezas del catálogo, cuánto suman y qué falta confirmar antes de comprar.</p>
+    <p class="hero-facts" id="hero-facts">Piezas reales con ficha técnica · precios de referencia, no de hoy</p>
+
+    <form id="advisor-form" class="advisor-form">
+      <label class="budget-field">Presupuesto máximo
+        <span class="money-input"><span aria-hidden="true">$</span><input name="budget" type="number" inputmode="numeric" enterkeyhint="done" min="100000" max="100000000" step="1" value="3500000" required aria-describedby="budget-help"><span aria-hidden="true">COP</span></span>
+      </label>
+      <div class="budget-presets" role="group" aria-label="Presupuestos de ejemplo"><button type="button" data-budget="2500000">$2,5 M</button><button type="button" data-budget="3500000">$3,5 M</button><button type="button" data-budget="5000000">$5 M</button></div>
+      <p id="budget-help" class="sr-only">Entre 100.000 y 100 millones de pesos.</p>
+      <fieldset>
+        <legend>¿Para qué la vas a usar?</legend>
+        <div class="use-group">
+        <label class="use-choice"><input type="radio" name="purpose" value="estudio" checked><span>Estudiar<small>Clases, tareas y proyectos</small></span></label>
+        <label class="use-choice"><input type="radio" name="purpose" value="trabajo"><span>Trabajar y crear<small>Diseño, programación, oficina</small></span></label>
+        <label class="use-choice"><input type="radio" name="purpose" value="juegos"><span>Jugar<small>Con gráfica dedicada</small></span></label>
+        </div>
+      </fieldset>
+      <label><span>Programas o juegos que usas <span class="optional">opcional</span></span><textarea name="programs" maxlength="800" placeholder="Photoshop, Blender, Valorant…"></textarea></label>
+      <button type="submit">Ver mis opciones</button>
+      <p id="advisor-status" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <figure class="build-stage" id="build-stage" aria-live="polite">
+    <div class="stage-head"><span id="stage-label">Equipo de ejemplo</span><strong id="stage-name">AM5 Esencial</strong></div>
+    <div class="stage-parts" id="stage-parts"></div>
+    <figcaption class="stage-foot"><span>Suma de referencia</span><strong id="stage-total">—</strong></figcaption>
+  </figure>
+</section>
+
+<section id="advice-results" hidden aria-labelledby="results-title">
+  <div class="results-heading"><h2 id="results-title">Tus opciones</h2><a href="#advisor-form" class="edit-needs">Cambiar mis datos</a></div>
+  <p id="advice-notice" role="status"></p>
+  <div id="advice-options" class="advice-options"></div>
+  <details class="result-comparison"><summary>Ver las diferencias en una tabla</summary><div id="results-comparison" class="table-scroll"></div></details>
+</section>
+
+<section id="que-esperar" class="expect" aria-labelledby="expect-title">
+  <h2 id="expect-title">Qué esperar de Criterio</h2>
+  <div class="expect-cols">
+    <div>
+      <h3>Lo que te mostramos</h3>
+      <ul>
+        <li>Equipos completos armados con piezas del catálogo, con su foto y su ficha.</li>
+        <li>Cuánto suman y si caben en lo que escribiste.</li>
+        <li>Advertencias concretas: precios que faltan, piezas por confirmar, conflictos de compatibilidad.</li>
+        <li>Un lugar en tu cuenta para guardar la decisión y adjuntar cotizaciones.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Lo que no prometemos</h3>
+      <ul>
+        <li>Precios de hoy. Son referencias históricas; confírmalas en la tienda.</li>
+        <li>FPS ni puntajes de rendimiento. No los inventamos.</li>
+        <li>Que la primera opción sea la mejor para ti. Depende de tus programas.</li>
+        <li>Revisar todas las combinaciones posibles: partimos de cuatro equipos de referencia.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="advisor-faq" aria-labelledby="faq-title">
+  <h2 id="faq-title">Antes de comprar</h2>
+  <div>
+    <details><summary>¿De dónde salen los precios?</summary><p>Se importaron del catálogo del proyecto con su tienda o fuente. Pueden haber cambiado: adjunta a tu decisión la cotización actual que consigas.</p></details>
+    <details><summary>¿Cómo ordenan las opciones?</summary><p>Primero las que tienen información completa y caben en tu presupuesto. Para juegos también pesa que el equipo tenga gráfica dedicada.</p></details>
+    <details><summary>¿Qué pasa cuando elijo una?</summary><p>Entras a tu cuenta, revisas las piezas y la guardas. Después puedes editarla, adjuntar cotizaciones y descargar sus versiones.</p></details>
+  </div>
+</section>
+
+</main>
+<footer>Criterio · Proyecto académico · Los precios son referencias históricas sujetas a confirmación.</footer>
+<script type="module" src="/assets/advisor.js"></script>
+<nav class="tabbar" aria-label="Secciones principales"><a href="/" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg><span>Asesor</span></a><a href="/catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg><span>Catálogo</span></a><a href="/dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></svg><span>Decisiones</span></a></nav>
+</body>
+</html>
