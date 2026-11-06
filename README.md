@@ -47,6 +47,8 @@ npm run restore:check
 
 El 5 de noviembre de 2026 se verificaron 17 pruebas (17 aprobadas, 0 fallos) sobre la copia local que origina esta entrega, usando MySQL real. El resultado del repositorio integrado debe verificarse nuevamente y registrarse en docs/VALIDACION-AVANCE-2.md. Las pruebas incluyen sesiones, duplicados, permisos de dos cuentas, CRUD, rollback y compensación de archivo, subida/descarga y casos límite del asesor.
 
+npm test usa fenixa_test. audit:files y backup usan la base principal: en una copia nueva, ejecutar npm start una vez antes para crear sus tablas.
+
 backup guarda tablas y documentos con manifiesto SHA-256 en storage/backups, sin sesiones; contiene datos privados. restore:check verifica y restaura SOLO en fenixa_test y una carpeta aparte; reemplaza datos de pruebas, nunca ejecutar junto con npm test. audit:files es de lectura y detecta faltantes, tamaños incorrectos y huérfanos; no borra ni repara.
 
 ## Límites y entrega

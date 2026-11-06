@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 process.loadEnvFile(path.join(root,'.env'));
 const directory=path.resolve(root,process.env.UPLOAD_DIR||'storage/files');
-const connection=await mysql.createConnection({host:process.env.MYSQL_HOST,port:Number(process.env.MYSQL_PORT||3308),user:process.env.MYSQL_USER,password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE});
+const connection=await mysql.createConnection({host:process.env.MYSQL_HOST,port:Number(process.env.MYSQL_PORT||3306),user:process.env.MYSQL_USER,password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE});
 try {
  const [documents]=await connection.query('SELECT id,path,size FROM documents');const missing=[],incorrect=[];
  for(const doc of documents){
@@ -16,4 +16,4 @@ try {
  const orphaned=entries.filter(e=>e.isFile()&&!known.has(e.name)).map(e=>e.name);
  const result={registered:documents.length,missing,incorrect,orphaned,readOnly:true};
  console.log(JSON.stringify(result,null,2));if(missing.length||incorrect.length||orphaned.length)process.exitCode=1;
-}finally{await connection.end();}
+}catch(error){if(error.code!=='ER_NO_SUCH_TABLE')throw error;console.error('Faltan las tablas de la base principal. Ejecuta npm start una vez para crearlas y vuelve a intentarlo.');process.exitCode=1;}finally{await connection.end();}

@@ -27,7 +27,7 @@ function renderList(){
  const query=normalized($('#decision-search').value.trim());const order=$('#decision-sort').value;
  const rows=decisions.filter(row=>normalized(row.title+' '+row.notes).includes(query));
  rows.sort((a,b)=>order==='name'?a.title.localeCompare(b.title):order==='budget-low'?a.budget-b.budget:order==='budget-high'?b.budget-a.budget:b.updated_at.localeCompare(a.updated_at));
- $('#count').textContent=decisions.length;$('#decision-results').textContent=`${rows.length} de ${decisions.length} decisiones`;
+ $('#count').textContent=`${decisions.length} ${decisions.length===1?'propuesta guardada':'propuestas guardadas'}`;$('#decision-results').textContent=`${rows.length} de ${decisions.length} decisiones`;
  $('#list').replaceChildren();
  if(!rows.length){$('#list').append(node('p',decisions.length?'No hay decisiones con esa búsqueda. Prueba otro nombre o una palabra de tus notas.':'Todavía no tienes decisiones. Comienza con el asesor o guarda una propuesta.'));return;}
  for(const row of rows){

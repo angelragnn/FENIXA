@@ -15,6 +15,7 @@ function render(){
  let rows=products.filter(p=>(!category||p.category_id===category)&&`${p.name} ${p.summary} ${p.sku}`.toLowerCase().includes(q));
  const sort=$('#sort').value;rows.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='low'?(a.price_min??Infinity)-(b.price_min??Infinity):(b.price_min??0)-(a.price_min??0));
  $('#result-count').textContent=`${rows.length} componentes`;$('#grid').replaceChildren();
+ if(!rows.length){const empty=make('p','No hay piezas con esa búsqueda. Prueba otra palabra o cambia la categoría.');empty.className='muted';$('#grid').append(empty);}
  for(const p of rows.slice(0,limit)){
   const card=make('article');card.className='panel catalog-card';card.classList.toggle('in-build',picks.includes(p.id));
   const rest=products.filter(row=>picks.includes(row.id)&&row.category_id!==p.category_id).map(asPart);const fit=checkPart(asPart(p),rest);

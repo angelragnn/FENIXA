@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { readFile } from 'node:fs/promises';
 export async function openStore(overrides = {}) {
-  const pool = mysql.createPool({host:process.env.MYSQL_HOST || '127.0.0.1',port:Number(process.env.MYSQL_PORT || 3308),user:process.env.MYSQL_USER || 'fenixa_app',password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE || 'fenixa',connectionLimit:5,...overrides});
+  const pool = mysql.createPool({host:process.env.MYSQL_HOST || '127.0.0.1',port:Number(process.env.MYSQL_PORT || 3306),user:process.env.MYSQL_USER || 'fenixa_app',password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE || 'fenixa',connectionLimit:5,...overrides});
   const schema = await readFile(new URL('./schema.mysql.sql',import.meta.url),'utf8');
   for (const statement of schema.split(';').map(s=>s.trim()).filter(Boolean)) await pool.query(statement);
   const catalog = JSON.parse(await readFile(new URL('./data-seeds/catalog.json',import.meta.url),'utf8'));
