@@ -1,48 +1,58 @@
-# FENIXA Universidad — Avance 1
+# Criterio — Avance 2 de FENIXA
 
-Primera entrega básica de una aplicación para orientar la elección de un PC.
+Asesor de compra de computadores para estudio, trabajo o juegos: presupuesto en COP → alternativas explicadas → decisión privada con cotizaciones. Nombre provisional; continúa la temática de PCs entregada en el Avance 1.
 
-## Definición del problema
+## Ejecutar una copia nueva
 
-Las personas que necesitan un computador para estudiar, trabajar o jugar encuentran especificaciones dispersas entre fabricantes y tiendas. El problema del proyecto consiste en relacionar esas características con su necesidad y reconocer qué información falta antes de elegir. FENIXA propone organizar esa información en una aplicación web dirigida a estudiantes y personas con conocimientos básicos de hardware.
+Requiere Node.js 24+, npm y MySQL 8+. Seguir [la preparación de MySQL](docs/INSTALACION-MYSQL.md), crear fenixa y fenixa_test y configurar .env a partir de .env.example. Cada integrante usa credenciales propias. No se incluyen cuentas, adjuntos ni la instancia de datos del computador original.
 
-## Objetivos del Avance 1
+```powershell
+npm ci
+npm start
+```
 
-El objetivo general es desarrollar la base de una aplicación web que facilite comprender opciones de computadores según uso y presupuesto, comenzando con una presentación responsive, maquetas de acceso y un backend conectado a SQLite.
+Abrir http://127.0.0.1:3002. `GET /health` consulta realmente MySQL; `/health/live` comprueba solo que el servidor responda. El arranque crea las tablas e importa el catálogo. Las migraciones futuras necesitarán un proceso propio; el esquema actual no modifica automáticamente columnas existentes.
 
-Objetivos específicos:
+HOST y PORT controlan la web. APP_ORIGIN debe coincidir exactamente con el origen del navegador. En HTTPS, NODE_ENV=production habilita cookies Secure; no activarlo al probar únicamente en HTTP local. UPLOAD_DIR señala los ficheros. No se distribuyen scripts para reconfigurar la instancia privada de MySQL de otro computador.
 
-- Explicar el problema y la finalidad de FENIXA en la página inicial.
-- Maquetar Login y Registro y permitir acceder a ellos desde la navegación.
-- Adaptar la presentación y los formularios a computador y teléfono.
-- Implementar el servidor y comprobar una consulta a SQLite mediante `GET /health`.
-- Documentar el alcance, las historias de usuario y los pasos para evaluar el avance.
+## Funciones del segundo avance
 
-## Alcance y límites
+- Registro, login y logout conectados a MySQL; contraseñas con scrypt y sal.
+- Ruta /dashboard y API privadas, redirección al login y sesiones revocables mediante cookie HttpOnly/SameSite=Strict.
+- CRUD de decisiones y componentes, consultas parametrizadas y filtro por propietario.
+- Subida multipart de PDF/PNG/JPEG hasta 5 MiB, documento físico más metadatos en MySQL, descarga privada, versiones JSON e historial.
+- Asesor público y catálogo con comparación. La interfaz maneja carga y errores; permite buscar y ordenar decisiones y abrir enlaces privados por ID.
+- Borrador temporal sessionStorage por usuario con recuperación tras recarga. Solo Guardar persiste la decisión en MySQL; logout explícito elimina el borrador.
 
-Esta entrega incluye Inicio, Login y Registro maquetados, navegación entre esas vistas, diseño responsive, servidor Node.js, esquema SQLite e indicador de conexión. Los formularios no crean cuentas, no autentican usuarios ni guardan contraseñas.
+## Arquitectura y datos
 
-El catálogo funcional, las comparaciones, el guardado de builds, las recomendaciones, la compatibilidad avanzada, las compras y los precios en vivo quedan para futuras entregas. El prototipo actual demuestra la presentación y la conexión técnica; todavía no recomienda equipos según presupuesto.
+client/ contiene HTML/CSS/JavaScript sin framework. server/app.mjs coordina Express; server/store.mjs usa un pool mysql2 y AsyncLocalStorage para transacciones; security.mjs gestiona credenciales y sesiones; advisor.mjs aplica reglas de recomendación. client/assets/compatibility.js comparte comprobaciones de hardware. El esquema está en server/schema.mysql.sql y el seed en server/data-seeds/catalog.json.
 
-## Historias de usuario
+MySQL guarda cuentas, sesiones, propuestas, categorías, componentes, relaciones, documentos e historial. storage/files guarda adjuntos y versiones JSON con nombres, precios y fuentes al guardar. Las descargas no son estáticas: requieren sesión y propietario. El borrado de propuestas es lógico y bloquea sus descargas.
 
-- **HU01:** Como visitante, quiero leer la presentación para entender el problema y el propósito de FENIXA. Se acepta cuando el inicio explica la propuesta y ofrece acceso a Login y Registro.
-- **HU02:** Como visitante, quiero abrir Login para conocer el formulario previsto. Se acepta cuando muestra correo, contraseña, botón de acceso y el aviso de que todavía no autentica.
-- **HU03:** Como visitante, quiero abrir Registro para conocer los datos previstos para una cuenta. Se acepta cuando muestra nombre, correo y contraseña y aclara que no crea cuentas ni guarda datos.
-- **HU04:** Como visitante desde un teléfono, quiero revisar el prototipo en una pantalla pequeña. Se acepta al comprobar a 390 píxeles que navegación y campos siguen accesibles sin desplazamiento horizontal, y revisar también escritorio.
-- **HU05:** Como evaluador, quiero comprobar la conexión a SQLite. Se acepta cuando `/health` devuelve HTTP 200, `status: ok` y `database: connected`, la prueba termina en PASS y el inicio muestra la conexión.
+dist/, server/db/ y server/config.mjs se conservan como referencia histórica del Avance 1: el arranque actual no los usa. Los auxiliares de prueba y ejecución antiguos que asumían SQLite se retiraron; usar los comandos actuales de este README.
 
-El documento académico en Word se entrega por separado. Este README y los archivos de `docs/` contienen la definición, las historias de usuario, la arquitectura y el modelo de datos que respaldan el código.
+## API
 
-## Modelo de datos
+Swagger en /docs; OpenAPI en /docs.json. Asesor: POST /api/advice. Catálogo público: GET /api/catalog. Registro, login, me y logout: /api/auth/*. Componentes y plantillas con sesión: /api/components y /api/reference-builds. Decisiones: GET/POST /api/proposals y GET/PUT/DELETE /api/proposals/:id. Adjuntos e historial: /api/proposals/:id/files y /api/proposals/:id/history. Descarga: GET /api/files/:fileId.
 
-SQLite configura usuarios (`users`), archivos de referencia (`files`) y actividad (`activity`), con claves foráneas, correo único y metadatos de archivo: nombre, ruta, tipo MIME, tamaño y fecha. El esquema incluye índices y restricciones. La interfaz todavía no carga archivos ni guarda usuarios o actividad. En FENIXA los archivos se interpretan como futuras fichas técnicas o imágenes; esta adaptación debe confirmarse con el docente.
+## Verificación y operaciones
 
-El diagrama está en `docs/er-diagram.md`. `npm test` comprueba restricciones e integridad y luego verifica la conexión y la API.
+```powershell
+npm test
+npm run audit:files
+npm run backup
+npm run restore:check
+```
 
-## Configuración
+El 5 de noviembre de 2026 se verificaron 17 pruebas (17 aprobadas, 0 fallos) sobre la copia local que origina esta entrega, usando MySQL real. El resultado del repositorio integrado debe verificarse nuevamente y registrarse en docs/VALIDACION-AVANCE-2.md. Las pruebas incluyen sesiones, duplicados, permisos de dos cuentas, CRUD, rollback y compensación de archivo, subida/descarga y casos límite del asesor.
 
-El ejemplo `.env.example` documenta `HOST` (dirección de escucha), `PORT` (puerto) y `DATABASE_PATH` (archivo SQLite). Puedes copiarlo a `.env` para cambiar los valores. El servidor carga `.env` si existe y usa valores predeterminados en caso contrario. `.env` no debe compartirse ni subirse al repositorio.
+backup guarda tablas y documentos con manifiesto SHA-256 en storage/backups, sin sesiones; contiene datos privados. restore:check verifica y restaura SOLO en fenixa_test y una carpeta aparte; reemplaza datos de pruebas, nunca ejecutar junto con npm test. audit:files es de lectura y detecta faltantes, tamaños incorrectos y huérfanos; no borra ni repara.
 
-El frontend está en `dist/`. La configuración del backend está en `server/config.mjs`, el acceso a SQLite en `server/db/database.mjs` y el servidor HTTP en `server/server.mjs`.
+## Límites y entrega
 
+180 productos públicos y cinco registros didácticos de legado; 177 fotos transparentes y tres pendientes. Los precios y ofertas son históricos, no cotizaciones actuales. Cuatro plantillas curadas no equivalen a optimización exhaustiva; no se calculan FPS ni rendimiento de los programas escritos por el visitante. La compatibilidad es parcial.
+
+Disco y MySQL no comparten una transacción ante cortes abruptos; se compensa el fallo normal. La firma de archivos es básica y falta política de retención. Para el final: ampliar documentación OpenAPI, separación de controladores/servicios, accesibilidad, perfiles y datos verificables. Esta es una base académica de desarrollo y demo local; los enlaces temporales anteriores pueden haber caducado.
+
+Ver docs/ENTREGABLE.md para la rúbrica y la demo; docs/TRABAJO-EQUIPO.md para responsables y evidencias reales. No se han creado commits ni PR por los integrantes al preparar los paquetes. Cada persona debe revisar, probar, adaptar lo necesario y describir con fidelidad su integración y el apoyo recibido.
