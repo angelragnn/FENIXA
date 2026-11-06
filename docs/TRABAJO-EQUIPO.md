@@ -9,7 +9,7 @@ Estado de los PR consultado en GitHub el 5 de noviembre de 2026.
 | 1 | Iván Alejandro Valencia Guaza | avance2/ivan-mysql-catalogo | Modelo MySQL, pool, seed, catálogo y compatibilidad compartida | PR #6, integrado por IvxnValencia. GitHub no muestra revisores, revisiones ni comentarios. |
 | 2 | Bryan Stiven Leyton | avance2/bryan-backend-acceso | Express, autenticación, CRUD, ficheros y OpenAPI | PR #7, integrado por bryanleyton11. GitHub no muestra revisores, revisiones ni comentarios. |
 | 3 | Ángel David Aragón Ordóñez | avance3/angel-interfaz | Interfaz, formularios, consumo asíncrono, catálogo y panel | PR #8, integrado por angelragnn. GitHub no muestra revisores, revisiones ni comentarios. |
-| 4 | Juan Jacob Daz Hernández | avance2/juan-pruebas-respaldo | Pruebas, auditoría, respaldo, instalación y demo | PR de esta rama. Revisión de Iván pendiente. |
+| 4 | Juan Jacob Daz Hernández | avance2/juan-pruebas-respaldo | Pruebas, auditoría, respaldo, instalación y demo | PR #9, integrado por mxr4nn-dot. GitHub no muestra revisores, revisiones ni comentarios. |
 
 Crear cada rama desde origin/main DESPUÉS de integrar el PR anterior. Los archivos de los cuatro paquetes no se solapan, pero tienen dependencias funcionales; la demo completa requiere los cuatro. No usar commits con --author de otro compañero, fechas inventadas ni afirmar que un paquete preparado es un desarrollo individual desde cero.
 
