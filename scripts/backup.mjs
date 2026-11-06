@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const tables=['accounts','categories','components','component_details','proposals','proposal_components','documents','history'];
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
-const config=()=>({host:process.env.MYSQL_HOST||'127.0.0.1',port:Number(process.env.MYSQL_PORT||3308),user:process.env.MYSQL_USER,password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE||'fenixa'});
+const config=()=>({host:process.env.MYSQL_HOST||'127.0.0.1',port:Number(process.env.MYSQL_PORT||3306),user:process.env.MYSQL_USER,password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE||'fenixa'});
 function filename(directory,name){
   if(typeof name!=='string'||name!==path.basename(name)||!name||name==='.'||name==='..')throw Error('Ruta de documento inválida.');
   return path.join(directory,name);
@@ -89,8 +89,15 @@ export async function restoreCheck(directory){
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   process.loadEnvFile(path.join(root,'.env'));
-  if(process.argv[2]==='restore-check'){
-    const latest=JSON.parse(await readFile(path.join(root,'storage/backups/latest.json'),'utf8'));
-    console.log(JSON.stringify(await restoreCheck(latest.directory),null,2));
-  }else console.log(JSON.stringify(await backup(),null,2));
+  try {
+    if(process.argv[2]==='restore-check'){
+      const latest=JSON.parse(await readFile(path.join(root,'storage/backups/latest.json'),'utf8'));
+      console.log(JSON.stringify(await restoreCheck(latest.directory),null,2));
+    }else console.log(JSON.stringify(await backup(),null,2));
+  } catch(error){
+    if(error.code==='ER_NO_SUCH_TABLE')console.error('Faltan las tablas de la base principal. Ejecuta npm start una vez para crearlas y vuelve a intentarlo.');
+    else if(error.code==='ENOENT'&&String(error.path).endsWith('latest.json'))console.error('Todavía no hay respaldos. Ejecuta primero npm run backup.');
+    else throw error;
+    process.exitCode=1;
+  }
 }
