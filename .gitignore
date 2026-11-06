@@ -1,19 +1,17 @@
-# Local environment configuration
+# Configuración y datos privados
 .env
 .env.*
 !.env.example
-
-# Generated SQLite databases and sidecar files
+storage/
 *.sqlite
 *.sqlite-*
 *.sqlite3
 *.sqlite3-*
-
-# Dependencies and logs
+# Dependencias, herramientas y archivos locales
 node_modules/
+.npm-cache/
+.tools/
+work/
 *.log
-npm-debug.log*
-
-# Operating system files
 .DS_Store
 Thumbs.db
