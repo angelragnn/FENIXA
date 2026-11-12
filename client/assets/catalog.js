@@ -1,65 +1,64 @@
 import {api} from './api.js';
-import {checkPart,asPart} from './compatibility.js';
+// Catálogo de builds completas: ya no se listan componentes sueltos.
 const $=s=>document.querySelector(s);
 const make=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
 const money=v=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v);
-const labels={architecture:'Arquitectura',cores:'Núcleos',threads:'Hilos',base:'Frecuencia base (GHz)',boost:'Turbo (GHz)',l3:'Caché L3 (MB)',tdp:'TDP (W)',socket:'Socket',memory:'Tipo de memoria',graphics:'Gráficos integrados',pcie:'Interfaz PCIe',lanes:'Líneas PCIe',requiresGpu:'Requiere gráfica dedicada',capacity:'Capacidad (GB)',rate:'Velocidad de memoria (MT/s)',vram:'Memoria de video (GB)',format:'Formato',dimensions:'Dimensiones',slots:'Ranuras de memoria',maxRam:'RAM máxima (GB)',chipset:'Chipset',wattage:'Potencia (W)',efficiency:'Certificación',modular:'Cableado modular',warranty:'Garantía',read:'Lectura (MB/s)',write:'Escritura (MB/s)',thermal:'Refrigeración',boardForm:'Formato de placa',protections:'Protecciones',connectors:'Conectores',gpuMax:'Longitud máxima GPU (mm)',coolerMax:'Altura máxima disipador (mm)',placement:'Instalación'};
-const display=value=>typeof value==='boolean'?(value?'Sí':'No'):typeof value==='object'?JSON.stringify(value):String(value);
-let products=[], limit=24;const compared=new Set();let picks=[];
-try{const value=JSON.parse(sessionStorage.getItem('fenixa-catalog-picks')||'[]');if(Array.isArray(value))picks=value.filter(Number.isSafeInteger);}catch{}
-function action(label,callback){const b=make('button',label);b.type='button';b.className='secondary';b.onclick=callback;return b;}
-function persist(){try{sessionStorage.setItem('fenixa-catalog-picks',JSON.stringify(picks));}catch{$('#status').textContent='El navegador no permite conservar el borrador. Guarda tu build antes de salir.';}$('#selection').textContent=`Mi build: ${picks.length} piezas`;$('#continue').disabled=!picks.length;}
-function safeLink(url,label){try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))return make('span','Fuente no disponible');const a=make('a',label);a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';return a;}catch{return make('span','Fuente no disponible');}}
+const useNames={estudio:'Estudio',trabajo:'Trabajo y creación',juegos:'Juegos'};
+const rowsToCompare=[['Procesador',1],['Tarjeta gráfica',11],['Memoria RAM',3],['Almacenamiento',12],['Placa madre',2],['Fuente',13],['Refrigeración',14],['Gabinete',10]];
+const partOrder=[10,1,11,2,3,14,12,13,15,16];
+let builds=[];const compared=new Set();
+function action(label,callback,className='secondary'){const b=make('button',label);b.type='button';if(className)b.className=className;b.onclick=callback;return b;}
+function budgetValue(){const v=Number($('#budget').value);return Number.isFinite(v)&&v>=100000?v:0;}
+function save(build){
+ try{
+  sessionStorage.setItem('fenixa-catalog-picks',JSON.stringify(build.componentIds));
+  sessionStorage.setItem('criterio-advice',JSON.stringify({title:'Mi decisión: '+build.name,purpose:build.use,budget:String(budgetValue()||build.total),notes:[build.description,...build.notes].join('\n')}));
+  location.assign('/dashboard');
+ }catch{$('#status').textContent='El navegador no permite conservar la build elegida. Revisa el almacenamiento del navegador.';}
+}
+function fallback(category){return category===11?'Gráficos integrados':category===14?'Disipador incluido con el procesador':'—';}
 function render(){
- const q=$('#search').value.trim().toLowerCase(),category=Number($('#category').value);
- let rows=products.filter(p=>(!category||p.category_id===category)&&`${p.name} ${p.summary} ${p.sku}`.toLowerCase().includes(q));
- const sort=$('#sort').value;rows.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='low'?(a.price_min??Infinity)-(b.price_min??Infinity):(b.price_min??0)-(a.price_min??0));
- $('#result-count').textContent=`${rows.length} componentes`;$('#grid').replaceChildren();
- if(!rows.length){const empty=make('p','No hay piezas con esa búsqueda. Prueba otra palabra o cambia la categoría.');empty.className='muted';$('#grid').append(empty);}
- for(const p of rows.slice(0,limit)){
-  const card=make('article');card.className='panel catalog-card';card.classList.toggle('in-build',picks.includes(p.id));
-  const rest=products.filter(row=>picks.includes(row.id)&&row.category_id!==p.category_id).map(asPart);const fit=checkPart(asPart(p),rest);
-  if(p.image){const img=make('img');img.src=p.image;img.alt=p.name;img.loading='lazy';img.width=400;img.height=260;card.append(img);}
-  card.append(make('span',p.category),make('h2',p.name),make('p',p.summary));
-  const price=make('strong',p.price_min?`${money(p.price_min)}${p.price_max>p.price_min?' – '+money(p.price_max):''}`:'Precio por confirmar');card.append(price,make('small','Referencia histórica · confirma precio y disponibilidad.'));
-  const badge=make('p',fit.label);badge.className='fit-badge '+fit.status;const fitDetails=make('details');fitDetails.append(make('summary',fit.label+' · Mi build'),make('p',fit.reason));card.append(fitDetails);
-  const buttons=make('div');buttons.className='actions';buttons.append(action(picks.includes(p.id)?'Quitar de mi build':'Añadir a mi build',()=>{
-   if(picks.includes(p.id))picks=picks.filter(id=>id!==p.id);
-   else {if(fit.status==='conflict'){$('#status').textContent=fit.reason;return;}picks=[...picks.filter(id=>products.find(row=>row.id===id)?.category_id!==p.category_id),p.id];}persist();render();
-  }),action(compared.has(p.id)?'Quitar comparación':'Comparar',()=>{
-   if(compared.has(p.id))compared.delete(p.id);
-   else {const first=products.find(row=>compared.has(row.id));if(first&&first.category_id!==p.category_id){$('#status').textContent='Compara piezas de la misma categoría.';return;}if(compared.size===3){$('#status').textContent='Puedes comparar hasta tres piezas.';return;}compared.add(p.id);}
-   $('#status').textContent=`${compared.size} piezas para comparar.`;$('#compare').disabled=compared.size<2;render();
-  }));card.append(buttons);
-  const details=make('details');details.append(make('summary','Ficha, fuentes y ofertas históricas'),make('p',p.sku));
-  const values=p.specs?.values||{};if(!Object.keys(values).length)details.append(make('p','Ficha técnica pendiente de ampliar.'));
-  const dl=make('dl');for(const [key,value]of Object.entries(values)){dl.append(make('dt',labels[key]||key),make('dd',display(value)));}if(p.specs?.photo?.note)details.append(make('p',p.specs.photo.note));
-  details.append(dl,safeLink(p.specs?.source||p.source,'Consultar fuente técnica'));
-  for(const offer of p.offers||[]){const row=make('p');row.append(safeLink(offer.url,`${offer.store}: ${money(offer.price)} · ${String(offer.checkedAt||'sin fecha').slice(0,10)}`));details.append(row);}
+ const use=$('#use').value,budget=budgetValue(),sort=$('#sort').value;
+ const rows=builds.filter(b=>!use||b.use===use).sort((a,b)=>sort==='high'?b.total-a.total:a.total-b.total);
+ const fitting=budget?rows.filter(b=>b.total<=budget).length:null;
+ $('#result-count').textContent=`${rows.length} ${rows.length===1?'build':'builds'}${fitting===null?'':` · ${fitting} caben en tu presupuesto`}`;
+ $('#grid').replaceChildren();
+ if(!rows.length){const empty=make('p','No hay builds para ese uso. Prueba con «Todos los usos».');empty.className='muted';$('#grid').append(empty);}
+ for(const b of rows){
+  const card=make('article');card.className='panel catalog-card build-card';card.classList.toggle('is-over',Boolean(budget&&b.total>budget));
+  const cover=b.parts.find(p=>p.category_id===10);
+  if(cover?.image){const img=make('img');img.src=cover.image;img.alt=`Gabinete de ${b.name}`;img.loading='lazy';img.width=400;img.height=260;card.append(img);}
+  card.append(make('span',useNames[b.use]||'General'),make('h2',b.name),make('p',b.short||b.description));
+  card.append(make('strong',money(b.total)+(b.missingPrices?' (parcial)':'')));
+  card.append(make('small',budget?(b.total<=budget?`Cabe en tu presupuesto · sobran ${money(budget-b.total)}`:`Se pasa ${money(b.total-budget)} de tu presupuesto`):`Suma de referencia de ${b.parts.length} piezas · sin envío`));
+  const buttons=make('div');buttons.className='actions';
+  buttons.append(action('Guardar esta build',()=>save(b),''),action(compared.has(b.id)?'Quitar comparación':'Comparar',()=>{
+   if(compared.has(b.id))compared.delete(b.id);
+   else{if(compared.size===3){$('#status').textContent='Puedes comparar hasta tres builds.';return;}compared.add(b.id);}
+   $('#status').textContent=`${compared.size} ${compared.size===1?'build':'builds'} para comparar.`;$('#compare').disabled=compared.size<2;render();
+  }));
+  card.append(buttons);
+  const details=make('details');details.append(make('summary',`Ver sus ${b.parts.length} piezas`));
+  const list=make('ul');list.className='build-parts';
+  for(const p of [...b.parts].sort((x,y)=>partOrder.indexOf(x.category_id)-partOrder.indexOf(y.category_id))){
+   const li=make('li');const img=make('img');img.alt='';img.loading='lazy';if(p.image)img.src=p.image;
+   const text=make('span');text.append(make('small',p.category),make('strong',p.name));
+   li.append(img,text,make('b',p.reference_price?money(p.reference_price):'Sin precio'));list.append(li);
+  }
+  details.append(list,make('p',b.description));for(const note of b.notes)details.append(make('p',note));
   card.append(details);$('#grid').append(card);
  }
- $('#more').hidden=rows.length<=limit;renderTray();
-}
-function renderTray(){
- const tray=$('#build-tray');tray.replaceChildren();const chosen=products.filter(p=>picks.includes(p.id));const base=[1,2,3,12,13,10];const complete=base.filter(id=>chosen.some(p=>p.category_id===id)).length;
- tray.append(make('span','MI BUILD'),make('h2',`${complete} de 6 piezas de base`));const progress=make('progress');progress.max=6;progress.value=complete;progress.setAttribute('aria-label','Categorías de base elegidas');tray.append(progress,make('p','Procesador, placa, RAM, almacenamiento, fuente y gabinete. El avance cuenta elecciones; no garantiza compatibilidad.'));
- for(const p of chosen){const row=make('div');row.className='tray-part';const img=make('img');img.src=p.image;img.alt='';const copy=make('div');copy.append(make('small',p.category),make('strong',p.name));row.append(img,copy,action('Quitar',()=>{picks=picks.filter(id=>id!==p.id);persist();render();}));tray.append(row);}
- if(!chosen.length)tray.append(make('p','Elige tu primera pieza en el catálogo.'));
- const sum=chosen.reduce((total,p)=>total+(p.price_min||0),0);tray.append(make('h3',money(sum)),make('small','Suma de referencias históricas. Envío no incluido.'));
- const missingPrices=chosen.filter(p=>!p.price_min).length;if(missingPrices)tray.append(make('p',`${missingPrices} piezas sin precio de referencia.`));
- for(const id of base.filter(id=>!chosen.some(p=>p.category_id===id))){const name=products.find(p=>p.category_id===id)?.category;tray.append(action('Elegir '+name,()=>{$('#category').value=id;$('#search').value='';limit=24;render();$('#search').focus();}));}
- const go=action('Guardar en mi cuenta',()=>{persist();location.assign('/dashboard');});go.disabled=!chosen.length;go.className='';tray.append(go);
 }
 $('#compare').onclick=()=>{
- const rows=products.filter(p=>compared.has(p.id));const table=make('table');const header=make('tr');header.append(make('th','Característica'));for(const p of rows)header.append(make('th',p.name));table.append(header);
- const keys=new Set(rows.flatMap(p=>Object.keys(p.specs?.values||{})));
- for(const key of ['Referencia COP',...keys]){const tr=make('tr');tr.append(make('th',labels[key]||key));for(const p of rows){const v=key==='Referencia COP'?(p.price_min?money(p.price_min):'Sin referencia'):p.specs?.values?.[key];tr.append(make('td',v===undefined||v===null?'Sin dato':display(v)));}table.append(tr);}
+ const rows=builds.filter(b=>compared.has(b.id));const table=make('table');const header=make('tr');header.append(make('th','Qué estás comparando'));for(const b of rows)header.append(make('th',b.name));table.append(header);
+ const line=(label,value)=>{const tr=make('tr');tr.append(make('th',label));for(const b of rows)tr.append(make('td',value(b)));table.append(tr);};
+ line('Precio de referencia',b=>money(b.total));
+ line('Uso',b=>useNames[b.use]||'General');
+ line('Gráfica dedicada',b=>b.hasDedicatedGpu?'Incluida':'No incluida');
+ for(const [label,category] of rowsToCompare)line(label,b=>b.parts.find(p=>p.category_id===category)?.name||fallback(category));
  $('#comparison').replaceChildren(table);$('#dialog').showModal();
 };
-$('#close').onclick=()=>$('#dialog').close();$('#more').onclick=()=>{limit+=24;render();};
-for(const id of ['#search','#category','#sort'])$(id).addEventListener(id==='#search'?'input':'change',()=>{limit=24;render();});
-$('#continue').onclick=()=>{persist();location.assign('/dashboard');};
-try{
- products=await api('/api/catalog');picks=picks.filter(id=>products.some(p=>p.id===id));persist();
- for(const [id,name]of new Map(products.map(p=>[p.category_id,p.category]))){const o=make('option',name);o.value=id;$('#category').append(o);}render();$('#status').textContent='Catálogo original cargado desde MySQL.';
-}catch(error){$('#status').textContent=error.message;}
+$('#close').onclick=()=>$('#dialog').close();
+for(const id of ['#use','#sort'])$(id).addEventListener('change',render);
+$('#budget').addEventListener('input',render);
+try{builds=await api('/api/builds');render();$('#status').textContent='Builds completas cargadas desde MySQL.';}catch(error){$('#status').textContent=error.message;}

@@ -8,7 +8,7 @@ const useVerb={estudio:'estudiar',trabajo:'trabajar y crear',juegos:'jugar'};
 const useNames={estudio:'Estudio',trabajo:'Trabajo y creación',juegos:'Juegos'};
 const statusNames={within_reference:'Dentro de la referencia',over_budget:'Requiere ampliar presupuesto',missing_prices:'Faltan precios',incomplete:'Propuesta incompleta',incompatible:'Conflicto pendiente'};
 function rememberNeeds(){try{sessionStorage.setItem('criterio-needs',JSON.stringify(Object.fromEntries(new FormData(form))));}catch{}}
-function changed(event){if(event?.target?.name==='purpose')showStage(form.elements.purpose.value);revision++;const hadResults=!$('#advice-results').hidden;$('#advice-results').hidden=true;$('#advisor-status').textContent=hadResults?'Cambiaste tus datos. Pulsa Ver mis opciones para comparar otra vez.':'';rememberNeeds();updatePresets();}
+function changed(event){if(!event||['purpose','budget'].includes(event.target?.name))scheduleStage();revision++;const hadResults=!$('#advice-results').hidden;$('#advice-results').hidden=true;$('#advisor-status').textContent=hadResults?'Cambiaste tus datos. Pulsa Ver mis opciones para comparar otra vez.':'';rememberNeeds();updatePresets();}
 function updatePresets(){for(const button of form.querySelectorAll('[data-budget]'))button.setAttribute('aria-pressed',String(Number(button.dataset.budget)===Number(form.elements.budget.value)));}
 form.addEventListener('input',changed);
 for(const button of form.querySelectorAll('[data-budget]'))button.onclick=()=>{form.elements.budget.value=button.dataset.budget;changed();};
@@ -38,12 +38,19 @@ form.addEventListener('submit',async event=>{
   $('#advice-results').hidden=false;$('#advisor-status').textContent='Opciones preparadas. Revisa sus razones y límites.';$('#advice-results').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
  }catch(error){if(current===revision)$('#advisor-status').textContent=error.message;}finally{submit.disabled=false;}
 });
-// Equipo de ejemplo de la portada: piezas y precios reales del catálogo.
-// Estudiar y trabajar muestran AM5 Esencial; jugar, AM5 Gaming (mismas plantillas que usa el asesor).
-const stages={estudio:{name:'AM5 Esencial',ids:[1006,1000,1002,1003,1004,1005]},trabajo:{name:'AM5 Esencial',ids:[1006,1000,1002,1003,1004,1005]},juegos:{name:'AM5 Gaming',ids:[1006,1001,1000,1002,1003,1004,1005]}};
-let catalog=[],stageTimer=0;
-function showStage(purpose){
- const stage=stages[purpose]||stages.estudio;const parts=stage.ids.map(id=>catalog.find(p=>p.id===id)).filter(Boolean);if(!parts.length)return;
+// Equipo de ejemplo de la portada: sigue tu presupuesto y tu uso.
+// Pregunta al mismo asesor del servidor y muestra su primera opción, con piezas y precios reales del catálogo.
+const partOrder=[10,1,11,2,3,14,12,13,15,16];
+let catalogBuilds=[],stageTimer=0,stageWait=0,stageRequest=0;
+function scheduleStage(){clearTimeout(stageWait);stageWait=setTimeout(showStage,250);}
+async function showStage(){
+ if(!catalogBuilds.length)return;
+ const purpose=form.elements.purpose.value,budget=Number(form.elements.budget.value),request=++stageRequest;let build=null;
+ if(budget>=100000&&budget<=100000000){try{const result=await api('/api/advice',{method:'POST',body:JSON.stringify({budget,purpose})});const pick=result.options.find(o=>purpose!=='juegos'||o.hasDedicatedGpu)||result.options[0];build=catalogBuilds.find(b=>b.id===pick?.id);}catch{}}
+ if(request!==stageRequest)return;
+ build||=catalogBuilds.find(b=>b.use===purpose)||catalogBuilds[0];
+ const parts=[...build.parts].sort((a,b)=>partOrder.indexOf(a.category_id)-partOrder.indexOf(b.category_id));if(!parts.length)return;
+ const stage={name:build.name,total:build.total,fits:budget>=100000?build.total<=budget:null,budget};
  const paint=()=>{
   const box=$('#stage-parts');box.replaceChildren();
   const [chassis,...rest]=parts;
@@ -55,7 +62,7 @@ function showStage(purpose){
   }
   const extra=parts.length-5;if(extra>0){const more=node('p',`+ ${extra} ${extra===1?'pieza':'piezas'} más: ${rest.slice(4).map(p=>p.category.toLowerCase()).join(', ')}`);more.className='stage-more';box.append(more);}
   const priced=parts.filter(p=>p.reference_price>0);
-  $('#stage-name').textContent=stage.name;$('#stage-label').textContent='Equipo de ejemplo para '+useVerb[purpose];
+  $('#stage-name').textContent=stage.name;$('#stage-label').textContent=stage.fits===null?'Equipo de ejemplo para '+useVerb[purpose]:stage.fits?`Para ${useVerb[purpose]} con ${money(stage.budget)}`:`La más cercana para ${useVerb[purpose]} · se pasa ${money(stage.total-stage.budget)}`;
   $('#stage-total').textContent=money(priced.reduce((sum,p)=>sum+p.reference_price,0))+(priced.length<parts.length?' (parcial)':'');
   $('#build-stage').classList.remove('is-leaving');
  };
@@ -63,4 +70,4 @@ function showStage(purpose){
  if(!$('#stage-parts').children.length||matchMedia('(prefers-reduced-motion: reduce)').matches){paint();return;}
  $('#build-stage').classList.add('is-leaving');stageTimer=setTimeout(paint,140);
 }
-try{catalog=await api('/api/catalog');const categories=new Set(catalog.map(p=>p.category_id)).size;$('#hero-facts').textContent=`${catalog.length} piezas con ficha técnica · ${categories} categorías · precios de referencia, no de hoy`;showStage(form.elements.purpose.value);}catch{$('#build-stage').hidden=true;}
+try{catalogBuilds=await api('/api/builds');const totals=catalogBuilds.map(b=>b.total);$('#hero-facts').textContent=`${catalogBuilds.length} builds completas · de ${money(Math.min(...totals))} a ${money(Math.max(...totals))} · precios de referencia, no de hoy`;showStage();}catch{$('#build-stage').hidden=true;}

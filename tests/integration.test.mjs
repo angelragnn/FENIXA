@@ -15,6 +15,12 @@ test('Flujo real en MySQL: sesiones, CRUD, componentes, ficheros y aislamiento',
   async function call(route,method='GET',body,session=cookie){return fetch(base+route,{method,redirect:'manual',headers:{...(body instanceof FormData?{}:{'content-type':'application/json'}),...(session?{cookie:session}:{})},body:body instanceof FormData?body:body===undefined?undefined:JSON.stringify(body)});}
   try {
     await t.test('health consulta MySQL y URL privada redirige',async()=>{assert.equal((await (await call('/health')).json()).engine,'mysql');const r=await call('/dashboard');assert.equal(r.status,302);assert.equal(r.headers.get('location'),'/login');assert.equal((await call('/api/proposals')).status,401);});
+    await t.test('catálogo público de builds completas, sin sesión y ordenado por precio',async()=>{
+      const r=await call('/api/builds','GET',undefined,'');assert.equal(r.status,200);const rows=(await r.json()).data;
+      assert.ok(rows.length>=10);assert.ok(rows.every(b=>b.parts.length===b.componentIds.length&&b.parts.length>=6&&b.total>0&&b.missingPrices===0));
+      assert.ok(rows.every((b,i)=>i===0||rows[i-1].total<=b.total));assert.ok(rows.every(b=>['estudio','trabajo','juegos'].includes(b.use)));
+      assert.ok(rows.every(b=>b.total===b.parts.reduce((sum,p)=>sum+p.reference_price,0)));
+    });
     await t.test('catálogo original público en MySQL con 180 componentes y 10 categorías',async()=>{
       const r=await call('/api/catalog');assert.equal(r.status,200);const rows=(await r.json()).data;
       assert.equal(rows.length,180);assert.equal(new Set(rows.map(p=>p.category_id)).size,10);
@@ -41,7 +47,7 @@ test('Flujo real en MySQL: sesiones, CRUD, componentes, ficheros y aislamiento',
       } finally {db.transaction=transaction;}
     });
     await t.test('build de referencia importada y selección real guardadas con sus relaciones',async()=>{
-      const builds=(await (await call('/api/reference-builds')).json()).data;assert.equal(builds.length,4);
+      const builds=(await (await call('/api/reference-builds')).json()).data;const seedBuilds=JSON.parse(await readFile(new URL('../server/data-seeds/catalog.json',import.meta.url),'utf8')).builds;assert.equal(builds.length,seedBuilds.length);assert.ok(builds.length>=10);
       const input={title:builds[0].name,purpose:'estudio',budget:3500000,componentIds:builds[0].componentIds};
       const r=await call('/api/proposals','POST',input);assert.equal(r.status,201);const saved=(await r.json()).data;
       const row=(await (await call(`/api/proposals/${saved.id}`)).json()).data;assert.equal(row.components.length,builds[0].componentIds.length);

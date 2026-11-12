@@ -13,6 +13,7 @@ export const specification = {
     '/api/advice':{post:operation('Propone hasta tres alternativas de referencia según presupuesto y uso','200',{requestBody:payload({budget:{type:'integer',minimum:100000,maximum:100000000},purpose:{type:'string',enum:['estudio','trabajo','juegos']},programs:{type:'string',maxLength:800}},['budget','purpose'])})},
     '/api/catalog':{get:operation('Catálogo original importado: fichas, imágenes y ofertas históricas')},
     '/api/reference-builds':{get:operation('Builds de referencia del proyecto original','200',secured)},
+    '/api/builds':{get:operation('Catálogo público de builds completas con piezas, fotos y suma de referencia')},
     '/api/components':{get:operation('Componentes y categorías de referencia','200',secured)},
     '/health':{get:operation('Comprueba una consulta real a MySQL')},
     '/health/live':{get:operation('Comprueba que el servidor responde')},

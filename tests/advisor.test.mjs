@@ -33,3 +33,28 @@ test('catálogo o plantillas vacías no inventan opciones y programas se validan
   assert.equal(advise([],seed.builds,input).options.some(o=>o.withinBudget),false);
   assert.throws(()=>advise(seed.products,seed.builds,{...input,programs:{}}),{status:400});
 });
+
+// Solo builds enteras: cada build del catálogo debe ser una PC completa, con precio y sin conflictos conocidos.
+test('cada build de referencia está completa, cotizada y sin conflictos conocidos',()=>{
+  assert.ok(seed.builds.length>=10);
+  assert.equal(new Set(seed.builds.map(b=>b.id)).size,seed.builds.length);
+  for(const build of seed.builds){
+    const option=advise(seed.products,[build],{budget:100000000,purpose:'estudio'}).options[0];
+    assert.equal(option.status,'within_reference',`${build.id}: ${option.status}`);
+    assert.ok(['estudio','trabajo','juegos'].includes(build.use),`${build.id}: uso ${build.use}`);
+  }
+});
+test('las builds se ordenan por presupuesto: primero la de tu uso que más lo aprovecha',()=>{
+  const budget=7000000;
+  const result=advise(seed.products,seed.builds,{budget,purpose:'juegos'});
+  const first=result.options[0];
+  assert.ok(first.hasDedicatedGpu&&first.total<=budget);
+  const candidates=seed.builds.map(b=>advise(seed.products,[b],{budget,purpose:'juegos'}).options[0]).filter(o=>o.hasDedicatedGpu&&o.total<=budget);
+  assert.equal(first.total,Math.max(...candidates.map(o=>o.total)));
+});
+test('con poco presupuesto para juegos se muestra al menos una build con gráfica dedicada',()=>{
+  const result=advise(seed.products,seed.builds,{budget:3000000,purpose:'juegos'});
+  assert.equal(result.options.length,3);
+  assert.ok(result.options.some(o=>o.hasDedicatedGpu));
+  assert.ok(result.options.some(o=>o.withinBudget));
+});
