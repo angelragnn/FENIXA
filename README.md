@@ -58,3 +58,8 @@ backup guarda tablas y documentos con manifiesto SHA-256 en storage/backups, sin
 Disco y MySQL no comparten una transacción ante cortes abruptos; se compensa el fallo normal. La firma de archivos es básica y falta política de retención. Para el final: ampliar documentación OpenAPI, separación de controladores/servicios, accesibilidad, perfiles y datos verificables. Esta es una base académica de desarrollo y demo local; los enlaces temporales anteriores pueden haber caducado.
 
 Ver docs/ENTREGABLE.md para la rúbrica y la demo; docs/TRABAJO-EQUIPO.md para responsables y evidencias reales. No se han creado commits ni PR por los integrantes al preparar los paquetes. Cada persona debe revisar, probar, adaptar lo necesario y describir con fidelidad su integración y el apoyo recibido.
+
+
+## Revisión local posterior al PR #11
+
+Sobre main b8115c7 se corrigió el descarte prematuro de borradores al cancelar o fallar una eliminación. La suite local pasa 21 pruebas (0 fallos). Ver [evidencia y límites de la revisión](docs/REVISION-2026-11-05.md). La comprobación visual de esta sesión se interrumpió; no se afirma una validación completa de navegador después del cambio.

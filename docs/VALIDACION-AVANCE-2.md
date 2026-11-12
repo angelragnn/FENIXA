@@ -48,3 +48,8 @@ Esta prueba se hizo sobre la rama de la parte 4, antes de integrarla, no sobre e
 - npm run backup y npm run restore:check, sin npm test simultáneo: terminaron bien con 5 cuentas y 6 documentos. Los datos restaurados en fenixa_test coincidieron.
 - Errores encontrados: ninguno en la aplicación, y no se corrigió código.
 - Límites: los mismos de la sección anterior. Falta que un compañero revise y que cada integrante pruebe en su propio equipo.
+
+
+## Revisión local posterior al PR #11
+
+Base b8115c7 con la corrección de cancelación del borrado aplicada localmente, sin commit ni push. Se ejecutaron 21 pruebas con 0 fallos, auditoría de 13 documentos y respaldo/restauración con conteos y huellas coincidentes. Evidencia y límites en [REVISION-2026-11-05.md](REVISION-2026-11-05.md). El control visual se interrumpió y no se declara una demo completa posterior.
