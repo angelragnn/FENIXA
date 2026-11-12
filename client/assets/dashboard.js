@@ -6,9 +6,11 @@ const form=$('#proposal-form');
 const money=value=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(value);
 const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
 function button(text,action){const element=node('button',text);element.type='button';element.className='secondary';element.onclick=action;return element;}
-let selected=null,generation=0,allComponents=[],decisions=[],userId=null,baseline='',dirty=false,busy=false;
+let selected=null,generation=0,allComponents=[],builds=[],legacyIds=[],decisions=[],userId=null,baseline='',dirty=false,busy=false;
 const draftKey=()=>`criterio-draft:${userId}`;
-const values=()=>({title:form.elements.title.value,purpose:form.elements.purpose.value,budget:form.elements.budget.value,notes:form.elements.notes.value,componentIds:Array.from(form.querySelectorAll('[name=componentIds]'),select=>Number(select.value)).filter(Boolean)});
+// Solo builds enteras: las piezas salen de la build marcada. "legacy" conserva una selección antigua pieza por pieza.
+function chosenIds(){const radio=form.querySelector('[name=build]:checked');if(!radio)return [];if(radio.value==='legacy')return [...legacyIds];return [...(builds.find(b=>b.id===radio.value)?.componentIds||[])];}
+const values=()=>({title:form.elements.title.value,purpose:form.elements.purpose.value,budget:form.elements.budget.value,notes:form.elements.notes.value,componentIds:chosenIds()});
 const fingerprint=()=>JSON.stringify(values());
 function message(text){$('#feedback').textContent=text;}
 function removeDraft(){try{if(userId)sessionStorage.removeItem(draftKey());}catch{}$('#draft-notice').hidden=true;}
@@ -20,8 +22,16 @@ function trackChanges(){
 function mayLeave(){if(busy){message('Espera a que termine el guardado.');return false;}if(dirty){if(!confirm('Tienes cambios sin guardar. ¿Quieres descartarlos y continuar?'))return false;removeDraft();dirty=false;}return true;}
 function setBusy(value){busy=value;for(const control of form.querySelectorAll('input,select,textarea,button'))control.disabled=value;$('#new').disabled=value;}
 function locationFor(id){const url=new URL(location.href);if(id)url.searchParams.set('decision',id);else url.searchParams.delete('decision');history.replaceState(null,'',url.pathname+url.search);}
-function reset(){generation++;selected=null;form.reset();$('#editor-title').textContent='Nueva propuesta';$('#attachments').hidden=true;$('#cancel').hidden=true;$('#compatibility').textContent='';locationFor(null);referenceTotal();markClean();}
-function chooseParts(ids){for(const select of form.querySelectorAll('[name=componentIds]'))select.value=String(ids.find(id=>allComponents.find(p=>p.id===id)?.category_id===Number(select.dataset.category))||'');referenceTotal();}
+function reset(){generation++;selected=null;form.reset();legacyIds=[];renderBuilds();$('#editor-title').textContent='Nueva propuesta';$('#attachments').hidden=true;$('#cancel').hidden=true;$('#compatibility').textContent='';locationFor(null);referenceTotal();markClean();}
+const sameIds=(a,b)=>a.length===b.length&&a.every(id=>b.includes(id));
+const buildTotal=build=>build.componentIds.reduce((sum,id)=>sum+(allComponents.find(p=>p.id===id)?.reference_price||0),0);
+function renderBuilds(checked=form.querySelector('[name=build]:checked')?.value){
+ const budget=Number(form.elements.budget.value);const box=$('#builds');box.replaceChildren();
+ const option=(value,title,detail,price,image,fit)=>{const label=node('label');label.className='build-option';const input=node('input');input.type='radio';input.name='build';input.value=value;input.checked=value===checked;const img=node('img');img.alt='';img.decoding='async';if(image)img.src=image;const text=node('span');text.append(node('strong',title),node('small',detail));if(fit){const note=node('small',fit.text);note.className='build-fit'+(fit.over?' is-over':'');text.append(note);}label.append(input,img,text,node('b',price));box.append(label);};
+ if(legacyIds.length)option('legacy','Selección anterior pieza por pieza',`${legacyIds.length} piezas elegidas antes del cambio a builds completas.`,'—',allComponents.find(p=>legacyIds.includes(p.id)&&p.category_id===10)?.image);
+ for(const build of [...builds].sort((a,b)=>buildTotal(a)-buildTotal(b))){const total=buildTotal(build);const fit=budget>0?(total<=budget?{text:`Cabe en tu presupuesto · sobran ${money(budget-total)}`}:{text:`Se pasa ${money(total-budget)} de tu presupuesto`,over:true}):null;option(build.id,build.name,build.short||build.description,money(total),allComponents.find(p=>p.id===build.componentIds[0])?.image,fit);}
+}
+function chooseParts(ids){const build=builds.find(b=>sameIds(b.componentIds,ids));legacyIds=ids.length&&!build?[...ids]:[];renderBuilds(build?build.id:legacyIds.length?'legacy':undefined);referenceTotal();}
 function applyValues(input){for(const key of ['title','purpose','budget','notes'])form.elements[key].value=input[key]??'';chooseParts(input.componentIds||[]);}
 const normalized=value=>String(value).normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 function renderList(){
@@ -42,7 +52,6 @@ async function open(id,{check=true}={}){
  if(check&&!mayLeave())return;const version=++generation;message('Abriendo propuesta…');
  try{
   const row=await api(`/api/proposals/${id}`);if(version!==generation)return;selected=id;
-  for(const select of form.querySelectorAll('[name=componentIds]')){const piece=row.components.find(p=>String(p.category_id)===select.dataset.category);if(piece&&!Array.from(select.options).some(o=>o.value===String(piece.id))){const option=node('option',piece.name+' (selección anterior)');option.value=piece.id;select.append(option);}}
   applyValues({...row,budget:String(row.budget)});$('#compatibility').textContent=row.compatibility.join(' ');$('#editor-title').textContent='Editar propuesta';$('#cancel').hidden=false;$('#attachments').hidden=false;locationFor(id);markClean();
   await details(id,version);if(version===generation)message('Propuesta abierta. Puedes editarla o adjuntar un documento.');
  }catch(error){if(version===generation)message(error.message);}
@@ -58,16 +67,21 @@ function referenceTotal(){
  $('#reference-total').textContent=pieces.length?`Suma de referencias históricas: ${money(known.reduce((sum,p)=>sum+p.reference_price,0))}. ${pieces.length-known.length} piezas sin precio. No incluye envío ni confirma precios actuales.`:'';renderOverview(pieces);
 }
 function renderOverview(pieces){
- const base=[1,2,3,12,13,10];$('#build-progress').textContent=`${base.filter(id=>pieces.some(p=>p.category_id===id)).length} de 6 categorías de base elegidas`;$('#piece-overview').replaceChildren();
- for(const id of [...base,...pieces.filter(p=>!base.includes(p.category_id)).map(p=>p.category_id)]){const piece=pieces.find(p=>p.category_id===id);const select=form.querySelector(`[name=componentIds][data-category="${id}"]`);if(!select)continue;const control=button('',()=>{select.focus();select.scrollIntoView({behavior:'smooth',block:'center'});});
-  if(piece?.image){const img=node('img');img.src=piece.image;img.alt='';control.append(img);}else control.append(node('span','＋'));
-  const text=node('span');text.append(node('small',select.parentElement.firstChild.textContent),node('strong',piece?piece.name:'Elegir pieza'));control.append(text);$('#piece-overview').append(control);
+ const order=[10,1,2,11,3,14,12,13,15,16];const build=builds.find(b=>sameIds(b.componentIds,pieces.map(p=>p.id)));
+ $('#build-progress').textContent=pieces.length?`${build?build.name:'Selección anterior'}: ${pieces.length} piezas`:'Elige una build para ver sus piezas';$('#piece-overview').replaceChildren();
+ for(const piece of [...pieces].sort((a,b)=>order.indexOf(a.category_id)-order.indexOf(b.category_id))){const item=node('div');
+  if(piece.image){const img=node('img');img.src=piece.image;img.alt='';item.append(img);}else item.append(node('span',''));
+  const text=node('span');text.append(node('small',piece.category),node('strong',piece.name));item.append(text);$('#piece-overview').append(item);
  }
  $('#fit-review').replaceChildren();for(const piece of pieces){const fit=checkPart(asPart(piece),pieces.filter(p=>p.category_id!==piece.category_id).map(asPart));if(fit.status==='conflict'||fit.matched){const detail=node('details');detail.append(node('summary',`${piece.name}: ${fit.label}`),node('p',fit.reason));$('#fit-review').append(detail);}}
 }
-form.addEventListener('input',trackChanges);form.addEventListener('change',()=>{referenceTotal();trackChanges();});
+form.addEventListener('input',event=>{if(event.target.name==='budget')renderBuilds();trackChanges();});
+form.addEventListener('change',event=>{
+ if(event.target.name==='build'){const build=builds.find(b=>b.id===event.target.value);if(build){if(!form.elements.title.value.trim())form.elements.title.value=build.name;if(!form.elements.notes.value.trim())form.elements.notes.value=[build.description,...build.notes||[]].join('\n');}}
+ referenceTotal();trackChanges();
+});
 form.addEventListener('submit',async event=>{
- event.preventDefault();const input=values();input.budget=Number(input.budget);const id=selected;setBusy(true);message('Guardando propuesta…');
+ event.preventDefault();const input=values();if(!input.componentIds.length){message('Elige una build completa antes de guardar.');$('#builds').scrollIntoView({behavior:'smooth',block:'center'});return;}input.budget=Number(input.budget);const id=selected;setBusy(true);message('Guardando propuesta…');
  try{const row=await api(id?`/api/proposals/${id}`:'/api/proposals',{method:id?'PUT':'POST',body:JSON.stringify(input)});removeDraft();dirty=false;await list();await open(row.id,{check:false});message('Propuesta guardada. También se creó una versión descargable en JSON.');}
  catch(error){message(error.message);}finally{setBusy(false);}
 });
@@ -86,8 +100,7 @@ $('#discard-draft').onclick=()=>{removeDraft();message('Borrador local descartad
 $('#recover-draft').onclick=async()=>{const draft=readDraft();if(!draft||!mayLeave())return;const validId=draft.id&&decisions.some(row=>row.id===draft.id);if(validId)await open(draft.id,{check:false});else reset();applyValues(draft.values);selected=validId?draft.id:null;$('#draft-notice').hidden=true;trackChanges();message('Borrador recuperado. Pulsa Guardar propuesta para guardarlo en tu cuenta.');};
 try{
  const user=await api('/api/auth/me');userId=user.id;$('#greeting').textContent=`Hola, ${user.name}`;allComponents=await api('/api/components');
- for(const [category,name]of new Map(allComponents.filter(p=>p.source_id).map(p=>[p.category_id,p.category]))){const label=node('label',name);const select=node('select');select.name='componentIds';select.dataset.category=category;const empty=node('option','Sin seleccionar');empty.value='';select.append(empty);for(const piece of allComponents.filter(p=>p.category_id===category&&p.source_id)){const option=node('option',piece.name);option.value=piece.id;select.append(option);}label.append(select);$('#components').append(label);}
- const references=await api('/api/reference-builds');for(const reference of references)$('#reference-builds').append(button(reference.name,()=>{if(!mayLeave())return;reset();form.elements.title.value=reference.name;form.elements.purpose.value=['estudio','trabajo','juegos'].includes(reference.use)?reference.use:'estudio';form.elements.notes.value=[reference.description,...reference.notes||[]].join('\n');chooseParts(reference.componentIds);trackChanges();message('Punto de partida cargado. Define tu presupuesto y guárdalo para crear tu propia decisión.');}));
+ builds=await api('/api/reference-builds');renderBuilds();
  referenceTotal();markClean();await list();
  const directId=new URL(location.href).searchParams.get('decision');if(directId&&/^[a-f0-9-]{36}$/.test(directId))await open(directId,{check:false});
  let incoming=false;try{const advice=JSON.parse(sessionStorage.getItem('criterio-advice')||'null');if(advice){reset();applyValues({...advice,componentIds:[]});sessionStorage.removeItem('criterio-advice');incoming=true;}const picks=JSON.parse(sessionStorage.getItem('fenixa-catalog-picks')||'[]');if(Array.isArray(picks)&&picks.length){chooseParts(picks);sessionStorage.removeItem('fenixa-catalog-picks');incoming=true;}}catch{}

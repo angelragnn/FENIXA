@@ -41,7 +41,7 @@ test('Flujo real en MySQL: sesiones, CRUD, componentes, ficheros y aislamiento',
       } finally {db.transaction=transaction;}
     });
     await t.test('build de referencia importada y selección real guardadas con sus relaciones',async()=>{
-      const builds=(await (await call('/api/reference-builds')).json()).data;assert.equal(builds.length,4);
+      const builds=(await (await call('/api/reference-builds')).json()).data;const seedBuilds=JSON.parse(await readFile(new URL('../server/data-seeds/catalog.json',import.meta.url),'utf8')).builds;assert.equal(builds.length,seedBuilds.length);assert.ok(builds.length>=10);
       const input={title:builds[0].name,purpose:'estudio',budget:3500000,componentIds:builds[0].componentIds};
       const r=await call('/api/proposals','POST',input);assert.equal(r.status,201);const saved=(await r.json()).data;
       const row=(await (await call(`/api/proposals/${saved.id}`)).json()).data;assert.equal(row.components.length,builds[0].componentIds.length);

@@ -21,6 +21,7 @@ HOST y PORT controlan la web. APP_ORIGIN debe coincidir exactamente con el orige
 - Ruta /dashboard y API privadas, redirección al login y sesiones revocables mediante cookie HttpOnly/SameSite=Strict.
 - CRUD de decisiones y componentes, consultas parametrizadas y filtro por propietario.
 - Subida multipart de PDF/PNG/JPEG hasta 5 MiB, documento físico más metadatos en MySQL, descarga privada, versiones JSON e historial.
+- Solo builds completas: el asesor y el panel ofrecen diez PCs enteras (de unos 2,3 a 9 millones COP) armadas con piezas del catálogo; ya no se arma pieza por pieza. El asesor ordena primero las que caben en el presupuesto y son del uso elegido, y entre ellas la que más lo aprovecha.
 - Asesor público y catálogo con comparación. La interfaz maneja carga y errores; permite buscar y ordenar decisiones y abrir enlaces privados por ID.
 - Borrador temporal sessionStorage por usuario con recuperación tras recarga. Solo Guardar persiste la decisión en MySQL; logout explícito elimina el borrador.
 
@@ -53,7 +54,7 @@ backup guarda tablas y documentos con manifiesto SHA-256 en storage/backups, sin
 
 ## Límites y entrega
 
-180 productos públicos y cinco registros didácticos de legado; 177 fotos transparentes y tres pendientes. Los precios y ofertas son históricos, no cotizaciones actuales. Cuatro plantillas curadas no equivalen a optimización exhaustiva; no se calculan FPS ni rendimiento de los programas escritos por el visitante. La compatibilidad es parcial.
+180 productos públicos y cinco registros didácticos de legado; 177 fotos transparentes y tres pendientes. Los precios y ofertas son históricos, no cotizaciones actuales. Diez builds curadas no equivalen a optimización exhaustiva; no se calculan FPS ni rendimiento de los programas escritos por el visitante. La compatibilidad es parcial.
 
 Disco y MySQL no comparten una transacción ante cortes abruptos; se compensa el fallo normal. La firma de archivos es básica y falta política de retención. Para el final: ampliar documentación OpenAPI, separación de controladores/servicios, accesibilidad, perfiles y datos verificables. Esta es una base académica de desarrollo y demo local; los enlaces temporales anteriores pueden haber caducado.
 
@@ -63,3 +64,8 @@ Ver docs/ENTREGABLE.md para la rúbrica y la demo; docs/TRABAJO-EQUIPO.md para r
 ## Revisión local posterior al PR #11
 
 Sobre main b8115c7 se corrigió el descarte prematuro de borradores al cancelar o fallar una eliminación. La suite local pasa 21 pruebas (0 fallos). Ver [evidencia y límites de la revisión](docs/REVISION-2026-11-05.md). La comprobación visual de esta sesión se interrumpió; no se afirma una validación completa de navegador después del cambio.
+
+
+## Builds completas (11 de noviembre de 2026)
+
+El panel reemplaza el selector por categoría por una lista de builds completas con su precio de referencia y si caben en el presupuesto escrito. El catálogo queda para consultar y comparar piezas. Las propuestas antiguas armadas pieza por pieza se conservan como «Selección anterior». La API sigue aceptando componentIds, así que la restricción a builds es de la interfaz. Seis builds nuevas (Inicial, Multitarea, Gaming Inicial, Creación, Gaming Plus, Gaming Alto) usan precios históricos del catálogo y pasan el comprobador parcial de compatibilidad; npm test: 24 aprobadas, 0 fallos.

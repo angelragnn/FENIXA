@@ -8384,7 +8384,7 @@
     {
       "id": "am5-gaming",
       "name": "AM5 Gaming",
-      "use": "gaming",
+      "use": "juegos",
       "caseId": "case-corsair-4000d-airflow-black",
       "short": "Ryzen 5 7600 · RTX 4060 · 32 GB DDR5",
       "description": "Una propuesta de gaming con una RTX 4060 de 8 GB, plataforma AM5 y gabinete con frontal ventilado.",
@@ -8420,7 +8420,7 @@
     {
       "id": "am5-gaming-blanco",
       "name": "AM5 Gaming · Blanco",
-      "use": "gaming",
+      "use": "juegos",
       "caseId": "case-corsair-4000d-airflow-white",
       "short": "Ryzen 5 7600 · RTX 4060 · líquida de 240 mm",
       "description": "La misma plataforma de gaming en un gabinete blanco, con refrigeración líquida y control de iluminación. Los componentes interiores son negros.",
@@ -8488,6 +8488,224 @@
         1058,
         1004,
         1072
+      ]
+    },
+    {
+      "id": "am5-inicial",
+      "name": "AM5 Inicial",
+      "use": "estudio",
+      "caseId": "market-speedlogic-49455",
+      "short": "Ryzen 5 8500G · gráficos integrados · 32 GB DDR5",
+      "description": "La entrada más económica del catálogo: equipo de escritorio para clases, ofimática y navegación, con espacio para añadir una gráfica más adelante.",
+      "tags": [
+        "Estudio",
+        "AM5",
+        "Gráficos integrados"
+      ],
+      "parts": [
+        "market-speedlogic-49455",
+        "market-ryzen-8500g",
+        "market-speedlogic-35623",
+        "ram-kingston-fury-beast-ddr5",
+        "ssd-kingston-nv3-500gb",
+        "market-xpg-probe-600"
+      ],
+      "notes": [
+        "Confirma que el Ryzen 5 8500G se venda en presentación BOX con disipador incluido; si no lo trae, añade un cooler y su coste.",
+        "Los Ryzen 8000G pueden requerir una BIOS reciente en placas B650: confírmalo con la tienda antes de comprar.",
+        "La placa tiene dos ranuras de memoria: el kit de 2 × 16 GB las ocupa. Conecta el monitor a la salida de video de la placa."
+      ],
+      "componentIds": [
+        1088,
+        1013,
+        1031,
+        1003,
+        1004,
+        1072
+      ]
+    },
+    {
+      "id": "am5-multitarea",
+      "name": "AM5 Multitarea",
+      "use": "trabajo",
+      "caseId": "market-speedlogic-33536",
+      "short": "Ryzen 7 8700G · Radeon 780M · 1 TB NVMe",
+      "description": "Ocho núcleos con los gráficos integrados más capaces del catálogo y 1 TB de almacenamiento para proyectos, oficina exigente y edición ligera.",
+      "tags": [
+        "Trabajo",
+        "AM5",
+        "Gráficos integrados"
+      ],
+      "parts": [
+        "market-speedlogic-33536",
+        "market-ryzen-8700g",
+        "motherboard-msi-pro-b650m-a-wifi",
+        "ram-kingston-fury-beast-ddr5",
+        "market-speedlogic-36885",
+        "market-speedlogic-38728"
+      ],
+      "notes": [
+        "Confirma que el Ryzen 7 8700G venga en presentación BOX con disipador incluido; si no, añade uno compatible con AM5.",
+        "Los Ryzen 8000G pueden requerir una BIOS reciente en placas B650: confírmalo antes de comprar.",
+        "Sin gráfica dedicada: revisa los requisitos de tus programas. Puedes añadir una GPU después; la fuente de 650 W deja margen para una de gama media."
+      ],
+      "componentIds": [
+        1093,
+        1016,
+        1002,
+        1003,
+        1068,
+        1075
+      ]
+    },
+    {
+      "id": "am5-gaming-inicial",
+      "name": "AM5 Gaming Inicial",
+      "use": "juegos",
+      "caseId": "market-speedlogic-33536",
+      "short": "Ryzen 5 8400F · RTX 5050 · 32 GB DDR5",
+      "description": "La puerta de entrada a los juegos con gráfica dedicada: RTX 5050 de 8 GB sobre plataforma AM5 actualizable.",
+      "tags": [
+        "Gaming",
+        "RTX 5050",
+        "AM5"
+      ],
+      "parts": [
+        "market-speedlogic-33536",
+        "market-clones-95498",
+        "market-speedlogic-35623",
+        "market-clones-105801",
+        "ram-kingston-fury-beast-ddr5",
+        "ssd-kingston-nv3-500gb",
+        "market-clones-105860"
+      ],
+      "notes": [
+        "El Ryzen 5 8400F no tiene gráficos integrados: el monitor se conecta a la RTX 5050.",
+        "Confirma que el procesador venga en presentación BOX con disipador incluido; si no, añade uno.",
+        "Los Ryzen 8000 pueden requerir una BIOS reciente en placas B650. 500 GB se llenan rápido con juegos: considera ampliar el almacenamiento."
+      ],
+      "componentIds": [
+        1093,
+        1130,
+        1031,
+        1140,
+        1003,
+        1004,
+        1155
+      ]
+    },
+    {
+      "id": "am5-creacion",
+      "name": "AM5 Creación",
+      "use": "trabajo",
+      "caseId": "case-corsair-4000d-airflow-black",
+      "short": "Ryzen 7 9700X · RTX 5060 · 1 TB NVMe",
+      "description": "Para diseño, modelado 3D y edición de video: ocho núcleos Zen 5 con una RTX 5060 que acelera programas compatibles con GPU.",
+      "tags": [
+        "Trabajo y creación",
+        "RTX 5060",
+        "AM5"
+      ],
+      "parts": [
+        "case-corsair-4000d-airflow-black",
+        "market-ryzen-9700x",
+        "market-speedlogic-45349",
+        "motherboard-msi-pro-b650m-a-wifi",
+        "market-speedlogic-41208",
+        "ram-kingston-fury-beast-ddr5",
+        "market-speedlogic-36885",
+        "market-clones-105860"
+      ],
+      "notes": [
+        "El Ryzen 7 9700X no incluye disipador: por eso se añade el Arctic Freezer 36. Confirma que traiga el montaje para AM5.",
+        "Altura del disipador (159 mm) por debajo del máximo publicado por el gabinete (170 mm).",
+        "32 GB es un buen punto de partida; proyectos de video o 3D grandes pueden pedir 64 GB (la placa tiene cuatro ranuras)."
+      ],
+      "componentIds": [
+        1006,
+        1175,
+        1102,
+        1002,
+        1044,
+        1003,
+        1068,
+        1155
+      ]
+    },
+    {
+      "id": "am5-gaming-plus",
+      "name": "AM5 Gaming Plus",
+      "use": "juegos",
+      "caseId": "case-corsair-4000d-airflow-black",
+      "short": "Ryzen 5 9600X · RTX 5060 Ti · 1 TB NVMe",
+      "description": "Un escalón más en gráficos: RTX 5060 Ti con procesador Zen 5, 1 TB NVMe y fuente de 850 W con margen.",
+      "tags": [
+        "Gaming",
+        "RTX 5060 Ti",
+        "AM5"
+      ],
+      "parts": [
+        "case-corsair-4000d-airflow-black",
+        "market-ryzen-9600x",
+        "market-speedlogic-45349",
+        "motherboard-msi-pro-b650m-a-wifi",
+        "market-clones-105807",
+        "ram-kingston-fury-beast-ddr5",
+        "market-speedlogic-36885",
+        "market-speedlogic-38732"
+      ],
+      "notes": [
+        "El Ryzen 5 9600X no incluye disipador: por eso se añade el Arctic Freezer 36.",
+        "La RTX 5060 Ti de esta lista es la versión de 8 GB; confirma el modelo exacto en la tienda.",
+        "Longitud de la gráfica (226 mm) por debajo del máximo publicado por el gabinete (360 mm)."
+      ],
+      "componentIds": [
+        1006,
+        1015,
+        1102,
+        1002,
+        1144,
+        1003,
+        1068,
+        1081
+      ]
+    },
+    {
+      "id": "am5-gaming-alto",
+      "name": "AM5 Gaming Alto",
+      "use": "juegos",
+      "caseId": "case-corsair-4000d-airflow-white",
+      "short": "Ryzen 7 7800X3D · RTX 5070 · Samsung 990 PRO",
+      "description": "La build más potente del catálogo: procesador X3D pensado para juegos, RTX 5070 de 12 GB y gabinete blanco.",
+      "tags": [
+        "Gaming",
+        "RTX 5070",
+        "Gabinete blanco"
+      ],
+      "parts": [
+        "case-corsair-4000d-airflow-white",
+        "market-speedlogic-31655",
+        "market-clones-84096",
+        "motherboard-msi-pro-b650m-a-wifi",
+        "market-clones-108954",
+        "ram-kingston-fury-beast-ddr5",
+        "market-speedlogic-28439",
+        "market-speedlogic-38732"
+      ],
+      "notes": [
+        "El Ryzen 7 7800X3D no incluye disipador: se añade el Noctua NH-U12S redux. Confirma el kit de montaje para AM5.",
+        "Longitud de la RTX 5070 (292 mm) y altura del disipador (158 mm) dentro de los máximos publicados por el gabinete.",
+        "Revisa que la fuente traiga el conector de alimentación que pide la gráfica exacta."
+      ],
+      "componentIds": [
+        1007,
+        1019,
+        1168,
+        1002,
+        1145,
+        1003,
+        1069,
+        1081
       ]
     }
   ]
