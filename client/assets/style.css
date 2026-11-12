@@ -39,6 +39,11 @@ body{background:#090909}header{max-width:1240px;padding:22px 28px}.brand{font-si
 .piece-overview>div img{width:48px;height:48px;object-fit:contain;background:transparent}
 .piece-overview>div small{display:block;font-size:10px;margin-bottom:4px;color:var(--label-3)}
 .piece-overview>div strong{font-size:11px;font-weight:500;overflow-wrap:anywhere}
-.builds-note h2{font-size:19px;font-weight:560;margin:0 0 8px}
-.builds-note p{font-size:13px;line-height:1.6;color:var(--label-2)}
-.builds-note .button{display:flex;align-items:center;justify-content:center;min-height:var(--tap);margin-top:12px;text-decoration:none}
+.build-card.is-over{opacity:.72}
+.build-card>strong{font-size:20px}
+.build-parts{list-style:none;margin:12px 0;padding:0;display:grid;gap:6px}
+.build-parts li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #262626}
+.build-parts img{width:40px;height:40px;object-fit:contain;background:transparent}
+.build-parts small{display:block;font-size:10px;color:var(--label-3)}
+.build-parts strong{display:block;font-size:12px;font-weight:500;overflow-wrap:anywhere}
+.build-parts b{font-size:12px;font-weight:500;color:var(--label-2);white-space:nowrap}

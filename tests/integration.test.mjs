@@ -15,6 +15,12 @@ test('Flujo real en MySQL: sesiones, CRUD, componentes, ficheros y aislamiento',
   async function call(route,method='GET',body,session=cookie){return fetch(base+route,{method,redirect:'manual',headers:{...(body instanceof FormData?{}:{'content-type':'application/json'}),...(session?{cookie:session}:{})},body:body instanceof FormData?body:body===undefined?undefined:JSON.stringify(body)});}
   try {
     await t.test('health consulta MySQL y URL privada redirige',async()=>{assert.equal((await (await call('/health')).json()).engine,'mysql');const r=await call('/dashboard');assert.equal(r.status,302);assert.equal(r.headers.get('location'),'/login');assert.equal((await call('/api/proposals')).status,401);});
+    await t.test('catálogo público de builds completas, sin sesión y ordenado por precio',async()=>{
+      const r=await call('/api/builds','GET',undefined,'');assert.equal(r.status,200);const rows=(await r.json()).data;
+      assert.ok(rows.length>=10);assert.ok(rows.every(b=>b.parts.length===b.componentIds.length&&b.parts.length>=6&&b.total>0&&b.missingPrices===0));
+      assert.ok(rows.every((b,i)=>i===0||rows[i-1].total<=b.total));assert.ok(rows.every(b=>['estudio','trabajo','juegos'].includes(b.use)));
+      assert.ok(rows.every(b=>b.total===b.parts.reduce((sum,p)=>sum+p.reference_price,0)));
+    });
     await t.test('catálogo original público en MySQL con 180 componentes y 10 categorías',async()=>{
       const r=await call('/api/catalog');assert.equal(r.status,200);const rows=(await r.json()).data;
       assert.equal(rows.length,180);assert.equal(new Set(rows.map(p=>p.category_id)).size,10);

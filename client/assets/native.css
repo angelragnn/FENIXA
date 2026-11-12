@@ -92,7 +92,7 @@ label small { font-size: 12px; }
 /* 5. Presupuesto como control segmentado (patrón conocido de iOS) ----------
    apple-design §16 «Familiaridad»: usar lo que la gente ya sabe usar. */
 .budget-presets {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px;
   padding: 2px; margin: -6px 0 25px; border-radius: 9px; background: #1f1f1f;
 }
 .budget-presets button {

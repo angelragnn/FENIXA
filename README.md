@@ -35,7 +35,7 @@ dist/, server/db/ y server/config.mjs se conservan como referencia histórica de
 
 ## API
 
-Swagger en /docs; OpenAPI en /docs.json. Asesor: POST /api/advice. Catálogo público: GET /api/catalog. Registro, login, me y logout: /api/auth/*. Componentes y plantillas con sesión: /api/components y /api/reference-builds. Decisiones: GET/POST /api/proposals y GET/PUT/DELETE /api/proposals/:id. Adjuntos e historial: /api/proposals/:id/files y /api/proposals/:id/history. Descarga: GET /api/files/:fileId.
+Swagger en /docs; OpenAPI en /docs.json. Asesor: POST /api/advice. Builds públicas: GET /api/builds. Catálogo de piezas (datos): GET /api/catalog. Registro, login, me y logout: /api/auth/*. Componentes y plantillas con sesión: /api/components y /api/reference-builds. Decisiones: GET/POST /api/proposals y GET/PUT/DELETE /api/proposals/:id. Adjuntos e historial: /api/proposals/:id/files y /api/proposals/:id/history. Descarga: GET /api/files/:fileId.
 
 ## Verificación y operaciones
 
@@ -68,4 +68,4 @@ Sobre main b8115c7 se corrigió el descarte prematuro de borradores al cancelar 
 
 ## Builds completas (11 de noviembre de 2026)
 
-El panel reemplaza el selector por categoría por una lista de builds completas con su precio de referencia y si caben en el presupuesto escrito. El catálogo queda para consultar y comparar piezas. Las propuestas antiguas armadas pieza por pieza se conservan como «Selección anterior». La API sigue aceptando componentIds, así que la restricción a builds es de la interfaz. Seis builds nuevas (Inicial, Multitarea, Gaming Inicial, Creación, Gaming Plus, Gaming Alto) usan precios históricos del catálogo y pasan el comprobador parcial de compatibilidad; npm test: 24 aprobadas, 0 fallos.
+El panel reemplaza el selector por categoría por una lista de builds completas con su precio de referencia y si caben en el presupuesto escrito. El catálogo público muestra solo las builds completas (GET /api/builds, sin sesión): filtro por uso y presupuesto, piezas de cada build, comparación de hasta tres y botón para guardarla. El ejemplo de la portada sigue el presupuesto y el uso escritos y muestra la build que elige el asesor; los presupuestos rápidos son 2,5 / 4 / 6,5 / 9,5 M. Las propuestas antiguas armadas pieza por pieza se conservan como «Selección anterior». La API sigue aceptando componentIds, así que la restricción a builds es de la interfaz. Seis builds nuevas (Inicial, Multitarea, Gaming Inicial, Creación, Gaming Plus, Gaming Alto) usan precios históricos del catálogo y pasan el comprobador parcial de compatibilidad; npm test: 25 aprobadas, 0 fallos.
