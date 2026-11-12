@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import { checkPart, asPart } from './compatibility.js';
+import { deleteDecision } from './decision-actions.js';
 const $=selector=>document.querySelector(selector);
 const form=$('#proposal-form');
 const money=value=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(value);
@@ -72,7 +73,7 @@ form.addEventListener('submit',async event=>{
 });
 $('#decision-search').addEventListener('input',renderList);$('#decision-sort').addEventListener('change',renderList);
 $('#new').onclick=()=>{if(mayLeave()){reset();form.elements.title.focus();}};$('#cancel').onclick=()=>{if(mayLeave())reset();};
-$('#delete').onclick=async()=>{if(!selected||!mayLeave()||!confirm('¿Eliminar esta propuesta de tu lista?'))return;try{await api(`/api/proposals/${selected}`,{method:'DELETE'});removeDraft();reset();await list();message('Propuesta eliminada.');}catch(error){message(error.message);}};
+$('#delete').onclick=()=>deleteDecision({id:selected,busy,dirty,ask:prompt=>confirm(prompt),remove:id=>api(`/api/proposals/${id}`,{method:'DELETE'}),onDeleted:async()=>{removeDraft();reset();await list();message('Propuesta eliminada.');},onError:message});
 $('#upload-form').addEventListener('submit',async event=>{
  event.preventDefault();const uploadForm=event.currentTarget;const submit=uploadForm.querySelector('button');submit.disabled=true;const id=selected,version=generation;
  try{message('Subiendo documento…');await api(`/api/proposals/${id}/files`,{method:'POST',body:new FormData(uploadForm)});await details(id,version);if(version===generation){uploadForm.reset();message('Documento guardado y asociado a tu propuesta.');}}catch(error){if(version===generation)message(error.message);}finally{submit.disabled=false;}
