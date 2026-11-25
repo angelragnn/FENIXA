@@ -122,7 +122,7 @@ try{
  referenceTotal();markClean();await list();
  const directId=new URL(location.href).searchParams.get('decision');if(directId&&/^[a-f0-9-]{36}$/.test(directId))await open(directId,{check:false});
  let incoming=false;try{const advice=JSON.parse(sessionStorage.getItem('criterio-advice')||'null');if(advice){reset();applyValues({...advice,componentIds:[]});sessionStorage.removeItem('criterio-advice');incoming=true;}const picks=JSON.parse(sessionStorage.getItem('fenixa-catalog-picks')||'[]');if(Array.isArray(picks)&&picks.length){chooseParts(picks);sessionStorage.removeItem('fenixa-catalog-picks');incoming=true;}}catch{}
- if(incoming){trackChanges();message('Tu propuesta está preparada como borrador. Revísala y guárdala en tu cuenta.');}else $('#draft-notice').hidden=!readDraft();
+ if(incoming){trackChanges();message('Tu propuesta está preparada como borrador. Revísala y guárdala en tu cuenta.');}else{$('#draft-notice').hidden=!readDraft();if($('#feedback').textContent==='Cargando tu espacio…')message(decisions.length?'':'Aún no tienes decisiones. Elige una build y guárdala.');}
 }catch(error){message(error.message);const retry=button('Reintentar',init);retry.id='retry';$('#feedback').after(retry);}finally{area.removeAttribute('aria-busy');}
 }
 init();
