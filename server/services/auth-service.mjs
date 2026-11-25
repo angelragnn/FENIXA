@@ -24,11 +24,9 @@ export function createAuthService({ db }) {
     },
 
     async register(body) {
-      const { name, email, password } = body || {};
-      const invalid = typeof name !== 'string' || name.trim().length < 2 || name.length > 80
-        || typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-        || typeof password !== 'string' || password.length < 10 || password.length > 128;
-      if (invalid) throw new HttpError(400, 'Revisa nombre, correo y contraseña (10 a 128 caracteres).');
+      const { name, email, password } = body;
+      // El esquema Register cubre tipos, correo y longitudes; solo falta el nombre sin espacios sobrantes.
+      if (name.trim().length < 2) throw new HttpError(400, 'El nombre debe tener al menos 2 caracteres.');
       const passwordHash = await hashPassword(password);
       const user = { id: randomUUID(), name: name.trim(), email: email.toLowerCase().trim() };
       try {
@@ -41,10 +39,7 @@ export function createAuthService({ db }) {
     },
 
     async login(body, req) {
-      const { email, password } = body || {};
-      if (typeof email !== 'string' || typeof password !== 'string' || email.length > 254 || password.length > 128) {
-        throw new HttpError(400, 'Correo y contraseña requeridos.');
-      }
+      const { email, password } = body;
       const account = await db.prepare('SELECT * FROM accounts WHERE email=?').get(email.trim().toLowerCase());
       // También se deriva un hash ante un correo desconocido para reducir diferencias de tiempo.
       const valid = account ? await verifyPassword(password, account.password_hash) : (await hashPassword(password), false);

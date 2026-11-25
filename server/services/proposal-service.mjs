@@ -5,12 +5,11 @@ import path from 'node:path';
 import { checkPart, asPart } from '../../client/assets/compatibility.js';
 import { HttpError } from '../middleware/errors.mjs';
 
+// El esquema (validation/schemas.mjs) ya comprueba tipos y rangos; aquí solo queda lo que no expresa:
+// el título cuenta sin espacios al inicio y al final.
 function proposalInput(body) {
-  const { title, purpose, budget, notes = '' } = body || {};
-  if (typeof title !== 'string' || title.trim().length < 3 || title.length > 100) throw new HttpError(400, 'El título debe tener entre 3 y 100 caracteres.');
-  if (!['estudio', 'trabajo', 'juegos'].includes(purpose)) throw new HttpError(400, 'Elige estudio, trabajo o juegos.');
-  if (!Number.isSafeInteger(budget) || budget <= 0 || budget > 100000000) throw new HttpError(400, 'El presupuesto debe ser un entero positivo de hasta 100 millones de COP.');
-  if (typeof notes !== 'string' || notes.length > 4000) throw new HttpError(400, 'Las notas admiten hasta 4000 caracteres.');
+  const { title, purpose, budget, notes = '' } = body;
+  if (title.trim().length < 3) throw new HttpError(400, 'El título debe tener entre 3 y 100 caracteres.');
   return { title: title.trim(), purpose, budget, notes };
 }
 
@@ -43,10 +42,7 @@ export function createProposalService({ db, documents }) {
   async function save(userId, body, existing) {
     const input = proposalInput(body);
     const stamp = now();
-    const ids = body?.componentIds || [];
-    if (!Array.isArray(ids) || ids.length > 20 || ids.some(id => !Number.isSafeInteger(id)) || new Set(ids).size !== ids.length) {
-      throw new HttpError(400, 'Lista de componentes inválida.');
-    }
+    const ids = body.componentIds || [];
     const pieces = ids.length
       ? await db.prepare(`SELECT c.*,d.source FROM components c LEFT JOIN component_details d ON d.component_id=c.id WHERE c.id IN (${ids.map(() => '?').join(',')})`).all(...ids)
       : [];

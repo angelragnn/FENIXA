@@ -1,5 +1,5 @@
 // Servicio de adjuntos: archivos en disco + metadatos en MySQL, con compensación si falla la base.
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import { HttpError } from '../middleware/errors.mjs';
@@ -23,8 +23,8 @@ export function createDocumentService({ db, filesDir }) {
     const filename = `${id}${kind === 'snapshot' ? '.json' : path.extname(name).toLowerCase()}`;
     writeFileSync(path.join(filesDir, filename), buffer, { flag: 'wx' });
     try {
-      await db.prepare('INSERT INTO documents(id,user_id,proposal_id,name,mime,size,path,kind,created_at) VALUES(?,?,?,?,?,?,?,?,?)')
-        .run(id, userId, proposalId, name, mime, buffer.length, filename, kind, now());
+      await db.prepare('INSERT INTO documents(id,user_id,proposal_id,name,mime,size,path,kind,created_at,sha256) VALUES(?,?,?,?,?,?,?,?,?,?)')
+        .run(id, userId, proposalId, name, mime, buffer.length, filename, kind, now(), createHash('sha256').update(buffer).digest('hex'));
     } catch (error) {
       unlinkSync(path.join(filesDir, filename));
       throw error;

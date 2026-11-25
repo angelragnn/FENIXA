@@ -26,7 +26,11 @@ function translate(error) {
       message: 'Archivo demasiado grande o formulario multipart inválido (máximo 5 MB, un archivo).'
     };
   }
-  if (error instanceof HttpError) return { status: error.status, message: error.message };
+  if (error instanceof HttpError) {
+    // Con detalles de validación, el mensaje incluye el primero para que el cliente lo muestre.
+    const first = error.details?.[0];
+    return { status: error.status, message: first ? `${error.message}: ${first.campo} ${first.motivo}` : error.message, details: error.details };
+  }
   // Errores 4xx de Express o body-parser (por ejemplo, cuerpo demasiado grande).
   if (Number.isInteger(error.status) && error.status >= 400 && error.status < 500) return { status: error.status, message: error.message };
   return { status: 500, message: 'Error interno del servidor.' };
@@ -35,8 +39,8 @@ function translate(error) {
 export function errorHandler(options = {}) {
   return (error, req, res, next) => {
     if (res.headersSent) return next(error);
-    const { status, message } = translate(error);
+    const { status, message, details } = translate(error);
     if (status >= 500 && !options.quiet) console.error(error);
-    res.status(status).json({ error: message });
+    res.status(status).json(details ? { error: message, details } : { error: message });
   };
 }
