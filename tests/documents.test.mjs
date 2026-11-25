@@ -58,6 +58,20 @@ test('Adjuntos: vista en línea, borrado y propiedad', async t => {
       assert.match(res.headers.get('content-disposition'), /^attachment/);
     });
 
+    await t.test('subida: queda en el historial y el nombre con apóstrofo y paréntesis cumple RFC 5987', async () => {
+      const data = new FormData();
+      data.append('file', new Blob([Buffer.from('%PDF-1.4\nPrueba\n%%EOF')], { type: 'application/pdf' }), "cotización (v2) 'final'*.pdf");
+      const up = await call(`/api/proposals/${proposalId}/files`, 'POST', data, owner);
+      assert.equal(up.status, 201);
+      const id = (await up.json()).data.id;
+      const history = (await (await call(`/api/proposals/${proposalId}/history`, 'GET', undefined, owner)).json()).data;
+      assert.ok(history.some(h => h.action === "Adjunto subido: cotización (v2) 'final'*.pdf"));
+      for (const url of [`/api/files/${id}?inline=1`, `/api/files/${id}`]) {
+        const header = (await call(url, 'GET', undefined, owner)).headers.get('content-disposition');
+        assert.match(header, /filename\*=UTF-8''cotizaci%C3%B3n%20%28v2%29%20%27final%27%2A\.pdf/);
+      }
+    });
+
     await t.test('DELETE propio: 204, luego 404, sin fila ni archivo y con historial', async () => {
       const id = await upload();
       const filesBefore = (await readdir(dir)).length;
