@@ -4,14 +4,53 @@ Asesor de compra de computadores para estudio, trabajo o juegos: presupuesto en 
 
 ## Ejecutar una copia nueva
 
-Requiere Node.js 24+, npm y MySQL 8+. Seguir [la preparación de MySQL](docs/INSTALACION-MYSQL.md), crear fenixa y fenixa_test y configurar .env a partir de .env.example. Cada integrante usa credenciales propias. No se incluyen cuentas, adjuntos ni la instancia de datos del computador original.
+Requiere Node.js 24+, npm y MySQL 8+. Cada integrante usa credenciales propias. No se incluyen cuentas, adjuntos ni la instancia de datos del computador original.
+
+### 1. Crear bases y usuario (obligatorio antes de `npm start`)
+
+Ejecuta este SQL con una cuenta administradora de MySQL. Cambia antes la contraseña de muestra. La guía completa está en [la preparación de MySQL](docs/INSTALACION-MYSQL.md).
+
+```sql
+CREATE DATABASE IF NOT EXISTS fenixa CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS fenixa_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'fenixa_app'@'localhost' IDENTIFIED BY 'CAMBIA_ESTA_CLAVE_POR_UNA_PROPIA';
+GRANT ALL PRIVILEGES ON fenixa.* TO 'fenixa_app'@'localhost';
+GRANT ALL PRIVILEGES ON fenixa_test.* TO 'fenixa_app'@'localhost';
+```
+
+La app usa la base `fenixa`. `npm test` usa `fenixa_test`.
+
+### 2. Crear .env
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+En Git Bash:
+
+```bash
+cp .env.example .env
+```
+
+Después edita .env:
+
+- `MYSQL_PASSWORD`: la misma clave que pusiste en `CREATE USER`.
+- `MYSQL_PORT`: el puerto de tu MySQL (3306 por defecto).
+
+Nunca subas .env a Git.
+
+### 3. Instalar y arrancar
 
 ```powershell
 npm ci
 npm start
 ```
 
-Abrir http://127.0.0.1:3002. `GET /health` consulta realmente MySQL; `/health/live` comprueba solo que el servidor responda.
+`npm ci` puede mostrar la advertencia `npm warn install-scripts` de @scarf/scarf. Es inofensiva.
+
+Abre http://127.0.0.1:3002 (con el valor de `PORT`, 3002 por defecto). `APP_ORIGIN` debe coincidir exactamente con la dirección que usa el navegador. `GET /health` consulta realmente MySQL; `/health/live` comprueba solo que el servidor responda.
 
 Al arrancar, el servidor hace tres cosas, en este orden:
 
@@ -78,7 +117,7 @@ server/
   store.mjs          pool mysql2, transacciones con AsyncLocalStorage y migraciones
   security.mjs       contraseñas con scrypt y tokens de sesión
   advisor.mjs        reglas del asesor
-  openapi.mjs        especificación para /docs
+  openapi.mjs        especificación para `/docs/`
   routes/            URLs
   middleware/        autenticación, origen, límites, validación y errores
   controllers/       req/res
@@ -131,7 +170,7 @@ Pasos completos en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 
 ## API
 
-Swagger en /docs; OpenAPI en /docs.json.
+Swagger en `/docs/`; OpenAPI en `/docs.json`.
 
 Públicas (sin sesión):
 
@@ -140,7 +179,7 @@ Públicas (sin sesión):
 - `GET /api/builds`: builds completas con piezas, fotos y suma de referencia.
 - `GET /api/catalog`: catálogo de piezas con datos históricos.
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`.
-- Páginas: `/`, `/catalog`, `/login`, `/register`, `/docs`.
+- Páginas: `/`, `/catalog`, `/login`, `/register`, `/docs/`.
 
 Con sesión:
 
@@ -164,7 +203,7 @@ npm run backup
 npm run restore:check
 ```
 
-npm test (43+ pruebas con MySQL real) usa la base fenixa_test. El 5 de noviembre de 2026 se verificaron 17 pruebas (17 aprobadas, 0 fallos) sobre la copia local que origina esta entrega, usando MySQL real. El resultado del repositorio integrado debe verificarse nuevamente y registrarse en docs/VALIDACION-AVANCE-2.md. Las pruebas incluyen sesiones, duplicados, permisos de dos cuentas, CRUD, rollback y compensación de archivo, subida/descarga y casos límite del asesor.
+npm test: 44 pruebas con MySQL real; usa la base fenixa_test. Las pruebas incluyen sesiones, duplicados, permisos de dos cuentas, CRUD, rollback y compensación de archivo, subida/descarga y casos límite del asesor.
 
 audit:files y backup usan la base principal: en una copia nueva, ejecutar npm start una vez antes para crear sus tablas.
 
@@ -176,12 +215,12 @@ backup guarda tablas y documentos con manifiesto SHA-256 en storage/backups, sin
 
 Disco y MySQL no comparten una transacción ante cortes abruptos; se compensa el fallo normal. La firma de archivos es básica y falta política de retención. Para el final: ampliar documentación OpenAPI, separación de controladores/servicios, accesibilidad, perfiles y datos verificables. Esta es una base académica de desarrollo y demo local; los enlaces temporales anteriores pueden haber caducado.
 
-Ver docs/ENTREGABLE.md para la rúbrica y la demo; docs/TRABAJO-EQUIPO.md para responsables y evidencias reales. No se han creado commits ni PR por los integrantes al preparar los paquetes. Cada persona debe revisar, probar, adaptar lo necesario y describir con fidelidad su integración y el apoyo recibido.
+Ver docs/ENTREGABLE.md para la rúbrica y la demo; docs/TRABAJO-EQUIPO.md para responsables y evidencias reales. El historial del equipo está en docs/TRABAJO-EQUIPO.md. Cada persona debe revisar, probar, adaptar lo necesario y describir con fidelidad su integración y el apoyo recibido.
 
-## Revisión local posterior al PR #11
+## Revisión local de borradores
 
-Sobre main b8115c7 se corrigió el descarte prematuro de borradores al cancelar o fallar una eliminación. La suite local pasa 21 pruebas (0 fallos). Ver [evidencia y límites de la revisión](docs/REVISION-2026-11-05.md). La comprobación visual de esta sesión se interrumpió; no se afirma una validación completa de navegador después del cambio.
+Al cancelar o fallar una eliminación, el borrador ya no se descarta. Ver [evidencia y límites de la revisión](docs/REVISION-2026-11-05.md). La validación visual completa de ese cambio no está confirmada.
 
 ## Builds completas (11 de noviembre de 2026)
 
-El panel reemplaza el selector por categoría por una lista de builds completas con su precio de referencia y si caben en el presupuesto escrito. El catálogo público muestra solo las builds completas (GET /api/builds, sin sesión): filtro por uso y presupuesto, piezas de cada build, comparación de hasta tres y botón para guardarla. El ejemplo de la portada sigue el presupuesto y el uso escritos y muestra la build que elige el asesor; los presupuestos rápidos son 2,5 / 4 / 6,5 / 9,5 M. Las propuestas antiguas armadas pieza por pieza se conservan como «Selección anterior». La API sigue aceptando componentIds, así que la restricción a builds es de la interfaz. Seis builds nuevas (Inicial, Multitarea, Gaming Inicial, Creación, Gaming Plus, Gaming Alto) usan precios históricos del catálogo y pasan el comprobador parcial de compatibilidad; npm test: 25 aprobadas, 0 fallos.
+El panel reemplaza el selector por categoría por una lista de builds completas con su precio de referencia y si caben en el presupuesto escrito. El catálogo público muestra solo las builds completas (GET /api/builds, sin sesión): filtro por uso y presupuesto, piezas de cada build, comparación de hasta tres y botón para guardarla. El ejemplo de la portada sigue el presupuesto y el uso escritos y muestra la build que elige el asesor; los presupuestos rápidos son 2,5 / 4 / 6,5 / 9,5 M. Las propuestas antiguas armadas pieza por pieza se conservan como «Selección anterior». La API sigue aceptando componentIds, así que la restricción a builds es de la interfaz. Seis builds nuevas (Inicial, Multitarea, Gaming Inicial, Creación, Gaming Plus, Gaming Alto) usan precios históricos del catálogo y pasan el comprobador parcial de compatibilidad.

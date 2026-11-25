@@ -1,6 +1,6 @@
 # Preparar MySQL para el equipo
 
-Instalar Node.js 24+, Git y MySQL 8+. El servicio de MySQL debe estar encendido. Una instalación estándar suele usar 3306; revisar el puerto de cada equipo. La instancia privada del computador de Ángel usa 3308: su carpeta de datos y sus contraseñas no se distribuyen.
+Instalar Node.js 24+, Git y MySQL 8+. El servicio de MySQL debe estar encendido. Una instalación estándar suele usar el puerto 3306; revisa el de tu equipo. Si usas otra instancia o puerto, ajusta `MYSQL_PORT` en `.env`. Las carpetas de datos y las contraseñas de otras instalaciones no se distribuyen.
 
 ## Crear bases y usuario
 
@@ -16,15 +16,40 @@ GRANT ALL PRIVILEGES ON fenixa_test.* TO 'fenixa_app'@'localhost';
 
 Si el usuario ya existe, revisar sus permisos y usar su contraseña vigente; no cambiarla por inferencia ni crear una cuenta root sin clave.
 
-En la raíz del repositorio, copiar .env.example a .env y completar MYSQL_PORT y MYSQL_PASSWORD con los datos propios. Nunca subir .env. Mantener MYSQL_DATABASE=fenixa; las pruebas de integración usan expresamente fenixa_test.
+### Si aparece «Access denied» con MYSQL_HOST=127.0.0.1
+
+Para MySQL, `127.0.0.1` y `localhost` son hosts distintos. Si la app usa `MYSQL_HOST=127.0.0.1` y recibe «Access denied», crea también esta cuenta con los mismos permisos. La clave debe ser la misma:
+
+```sql
+CREATE USER 'fenixa_app'@'127.0.0.1' IDENTIFIED BY 'CAMBIA_ESTA_CLAVE_POR_UNA_PROPIA';
+GRANT ALL PRIVILEGES ON fenixa.* TO 'fenixa_app'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON fenixa_test.* TO 'fenixa_app'@'127.0.0.1';
+```
+
+## Configurar .env
+
+En la raíz del repositorio, copia `.env.example` a `.env`:
 
 ```powershell
 Copy-Item .env.example .env
-npm ci
 ```
 
-El repositorio integrado arranca con `npm start`: crea tablas e importa el catálogo. Abrir http://127.0.0.1:3002/health y comprobar `database: connected` y `engine: mysql`. No hace falta importar manualmente el SQL: el servidor lo ejecuta.
+En Git Bash, el comando es `cp .env.example .env`.
 
-Durante la integración por cuatro PR, la aplicación completa y `npm test` requieren las cuatro partes. Antes se puede revisar conexión, esquema y módulos sin prometer una demo completa.
+Después completa:
 
-APP_ORIGIN debe coincidir con la dirección del navegador. HOST=127.0.0.1 solo escucha en el computador local. No abrir MySQL públicamente. Un enlace temporal de Cloudflare no es un despliegue permanente ni acompaña estos archivos.
+- `MYSQL_PASSWORD`: la misma clave que pusiste en `CREATE USER`.
+- `MYSQL_PORT`: el puerto de tu MySQL (3306 por defecto).
+
+Mantén `MYSQL_DATABASE=fenixa`; las pruebas de integración usan `fenixa_test`. Nunca subas .env a Git.
+
+## Arrancar
+
+```powershell
+npm ci
+npm start
+```
+
+El servidor crea las tablas e importa el catálogo. Abrir http://127.0.0.1:3002/health (con el valor de `PORT`, 3002 por defecto) y comprobar `database: connected` y `engine: mysql`. No hace falta importar manualmente el SQL: el servidor lo ejecuta.
+
+`APP_ORIGIN` debe coincidir exactamente con la dirección que usa el navegador. `HOST=127.0.0.1` solo escucha en el computador local. No abrir MySQL públicamente. Un enlace temporal de Cloudflare no es un despliegue permanente ni acompaña estos archivos.
