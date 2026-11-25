@@ -65,6 +65,13 @@ export const specification = {
         requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', required: ['file'], properties: { file: { type: 'string', format: 'binary' } } } } } }
       })
     },
-    '/api/files/{fileId}': { parameters: [fileIdParam], get: operation('Descarga privada del archivo', { 200: 'Contenido del archivo' }, [400, 401, 404], secured) }
+    '/api/files/{fileId}': {
+      parameters: [fileIdParam],
+      get: operation('Descarga privada del archivo; con ?inline=1 los PDF/PNG/JPEG se muestran en el navegador (CSP restrictiva y nosniff); las versiones JSON siempre se descargan', { 200: 'Contenido del archivo' }, [400, 401, 404], {
+        ...secured,
+        parameters: [{ name: 'inline', in: 'query', required: false, schema: schemas.FileQuery.properties.inline }]
+      }),
+      delete: operation('Elimina un adjunto propio (fila, historial y archivo); las versiones JSON automáticas no se pueden eliminar', { 204: 'Adjunto eliminado' }, [400, 401, 404, 409], secured)
+    }
   }
 };

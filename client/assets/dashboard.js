@@ -60,8 +60,23 @@ async function open(id,{check=true}={}){
 async function details(id,version=generation){
  const [files,history]=await Promise.all([api(`/api/proposals/${id}/files`),api(`/api/proposals/${id}/history`)]);if(version!==generation)return;
  $('#files').replaceChildren();$('#history').replaceChildren();if(!files.length)$('#files').append(node('li','Sin documentos ni versiones todavía.'));if(!history.length)$('#history').append(node('li','Sin cambios registrados.'));
- for(const file of files){const li=node('li');const a=node('a',`${file.kind==='snapshot'?'Versión guardada (JSON)':file.name} · ${size(file.size)}`);a.href=`/api/files/${file.id}`;a.setAttribute('download','');li.append(a,node('small',(file.kind==='snapshot'?'Versión automática':'Adjunto')+' · '+new Date(file.created_at).toLocaleString('es-CO')));$('#files').append(li);}
+ for(const file of files){
+  const snapshot=file.kind==='snapshot',li=node('li');li.className='file-item';
+  const info=node('div');info.className='file-info';
+  if(!snapshot&&file.mime!=='application/pdf'){const img=node('img');img.className='file-thumb';img.src=`/api/files/${file.id}?inline=1`;img.alt=file.name;img.loading='lazy';img.width=48;img.height=48;info.append(img);}
+  const text=node('div');text.append(node('span',`${snapshot?'Versión guardada (JSON)':file.name} · ${size(file.size)}`),node('small',(snapshot?'Versión automática':'Adjunto')+' · '+new Date(file.created_at).toLocaleString('es-CO')));info.append(text);
+  const actions=node('div');actions.className='file-actions';
+  if(!snapshot){const view=node('a','Ver');view.href=`/api/files/${file.id}?inline=1`;view.target='_blank';view.rel='noopener';view.className='button secondary';view.setAttribute('aria-label',`Ver ${file.name}`);actions.append(view);}
+  const download=node('a','Descargar');download.href=`/api/files/${file.id}`;download.setAttribute('download','');download.className='button secondary';if(!snapshot)download.setAttribute('aria-label',`Descargar ${file.name}`);actions.append(download);
+  if(!snapshot){const del=button('Eliminar',()=>removeFile(file,del));del.classList.add('danger');del.setAttribute('aria-label',`Eliminar ${file.name}`);actions.append(del);}
+  li.append(info,actions);$('#files').append(li);
+ }
  for(const entry of history)$('#history').append(node('li',`${entry.action} · ${new Date(entry.created_at).toLocaleString('es-CO')}`));
+}
+async function removeFile(file,control){
+ if(busy||!confirm(`¿Eliminar el adjunto "${file.name}"? Esta acción no se puede deshacer.`))return;
+ const id=selected,version=generation;control.disabled=true;message('Eliminando adjunto…');
+ try{await api(`/api/files/${file.id}`,{method:'DELETE'});await details(id,version);if(version===generation)message('Adjunto eliminado.');}catch(error){control.disabled=false;if(version===generation)message(error.message);}
 }
 function referenceTotal(){
  const ids=values().componentIds;const pieces=allComponents.filter(p=>ids.includes(p.id));const known=pieces.filter(p=>p.reference_price>0);

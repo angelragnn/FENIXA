@@ -57,6 +57,10 @@ export const schemas = {
     required: ['fileId'],
     properties: { fileId: { title: 'id del archivo', type: 'string', format: 'uuid', pattern: UUID } }
   },
+  FileQuery: {
+    type: 'object',
+    properties: { inline: { title: 'inline', type: 'string', enum: ['1'] } }
+  },
   ValidationError: {
     type: 'object',
     required: ['error'],

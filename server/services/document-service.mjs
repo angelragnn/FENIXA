@@ -51,20 +51,40 @@ export function createDocumentService({ db, storage }) {
       return { id: doc.id, name, size: b.length };
     },
 
-    // Devuelve el contenido solo si el archivo es del usuario y su decisión no está eliminada.
-    async read(userId, fileId) {
+    // Busca un archivo del usuario cuya decisión no esté eliminada y comprueba que su driver esté activo.
+    async owned(userId, fileId) {
       const doc = await db.prepare('SELECT d.* FROM documents d JOIN proposals p ON p.id=d.proposal_id WHERE d.id=? AND d.user_id=? AND d.deleted=0 AND p.deleted=0').get(fileId, userId);
       if (!doc) throw new HttpError(404, 'Archivo no encontrado.');
       const driver = doc.storage_driver || 'local';
       if (driver !== storage.describe()) {
-        throw new HttpError(503, `Este archivo está en el almacenamiento "${driver}"; activa STORAGE_DRIVER=${driver} para descargarlo.`);
+        throw new HttpError(503, `Este archivo está en el almacenamiento "${driver}"; activa STORAGE_DRIVER=${driver} para acceder a él.`);
       }
+      return doc;
+    },
+
+    // Devuelve el contenido solo si el archivo es del usuario y su decisión no está eliminada.
+    async read(userId, fileId) {
+      const doc = await this.owned(userId, fileId);
       try {
-        return { buffer: await storage.get(doc.path), name: doc.name, mime: doc.mime };
+        return { buffer: await storage.get(doc.path), name: doc.name, mime: doc.mime, kind: doc.kind };
       } catch (error) {
         if (error.code === 'NOT_FOUND') throw new HttpError(404, 'Archivo no encontrado.');
         throw error;
       }
+    },
+
+    // Borra un adjunto suelto: fila + historial en una transacción y después el archivo físico.
+    // Las versiones JSON automáticas no se pueden borrar (409): son el registro de cada cambio.
+    async remove(userId, fileId) {
+      const doc = await this.owned(userId, fileId);
+      if (doc.kind === 'snapshot') throw new HttpError(409, 'Las versiones guardadas automáticamente no se pueden eliminar.');
+      // db.transaction se busca en el momento de usarlo (las pruebas lo sustituyen).
+      await db.transaction(async () => {
+        await db.prepare('DELETE FROM documents WHERE id=? AND user_id=?').run(doc.id, userId);
+        await db.prepare('INSERT INTO history(user_id,proposal_id,action,created_at) VALUES(?,?,?,?)').run(userId, doc.proposal_id, `Adjunto eliminado: ${doc.name}`.slice(0, 100), now());
+      });
+      // Si el archivo ya no existe (o no se puede borrar) la fila ya no apunta a él: sigue siendo éxito.
+      await storage.remove(doc.path).catch(() => {});
     }
   };
 }
