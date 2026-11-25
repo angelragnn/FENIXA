@@ -71,7 +71,8 @@
 /* --- Equipo de ejemplo: el protagonista visual --------------------------------
    Fotos transparentes reales con su nombre y precio. La pieza principal
    (gabinete) en grande; el resto como una ficha técnica a la derecha. */
-.build-stage { position: sticky; top: 96px; margin: 0; padding-top: 8px; }
+.build-stage { position: static; margin: 0; padding-top: 8px; }
+@media (min-width: 861px) and (min-height: 760px) { .build-stage { position: sticky; top: 96px; } }
 .stage-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
 .stage-head span { font-size: 13px; color: var(--label-3); }
 .stage-head strong { font-size: 17px; font-weight: 600; color: var(--label); }

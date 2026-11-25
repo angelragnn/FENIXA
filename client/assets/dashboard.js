@@ -97,7 +97,7 @@ form.addEventListener('change',event=>{
  referenceTotal();trackChanges();
 });
 form.addEventListener('submit',async event=>{
- event.preventDefault();const input=values();if(!input.componentIds.length){message('Elige una build completa antes de guardar.');$('#builds').scrollIntoView({behavior:'smooth',block:'center'});return;}input.budget=Number(input.budget);const id=selected;setBusy(true);message('Guardando propuesta…');
+ event.preventDefault();const input=values();if(!input.componentIds.length){message('Elige una build completa antes de guardar.');$('#builds').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});return;}input.budget=Number(input.budget);const id=selected;setBusy(true);message('Guardando propuesta…');
  try{const row=await api(id?`/api/proposals/${id}`:'/api/proposals',{method:id?'PUT':'POST',body:JSON.stringify(input)});removeDraft();dirty=false;await list();await open(row.id,{check:false});message('Propuesta guardada. También se creó una versión descargable en JSON.');}
  catch(error){message(error.message);}finally{setBusy(false);}
 });
