@@ -3,6 +3,7 @@ import { checkPart, asPart } from './compatibility.js';
 import { deleteDecision } from './decision-actions.js';
 const $=selector=>document.querySelector(selector);
 const form=$('#proposal-form');
+const size=bytes=>bytes>=1048576?(bytes/1048576).toFixed(1)+' MB':Math.max(1,Math.ceil(bytes/1024))+' KB';
 const money=value=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(value);
 const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
 function button(text,action){const element=node('button',text);element.type='button';element.className='secondary';element.onclick=action;return element;}
@@ -20,7 +21,7 @@ function trackChanges(){
  if(dirty&&userId){try{sessionStorage.setItem(draftKey(),JSON.stringify({version:1,userId,id:selected,values:values(),savedAt:Date.now()}));}catch{message('Los cambios aún no están guardados. El navegador no permite conservar el borrador local.');}}else if(userId){removeDraft();}
 }
 function mayLeave(){if(busy){message('Espera a que termine el guardado.');return false;}if(dirty){if(!confirm('Tienes cambios sin guardar. ¿Quieres descartarlos y continuar?'))return false;removeDraft();dirty=false;}return true;}
-function setBusy(value){busy=value;for(const control of form.querySelectorAll('input,select,textarea,button'))control.disabled=value;$('#new').disabled=value;}
+function setBusy(value){busy=value;form.setAttribute('aria-busy',String(value));for(const control of form.querySelectorAll('input,select,textarea,button'))control.disabled=value;$('#new').disabled=value;}
 function locationFor(id){const url=new URL(location.href);if(id)url.searchParams.set('decision',id);else url.searchParams.delete('decision');history.replaceState(null,'',url.pathname+url.search);}
 function reset(){generation++;selected=null;form.reset();legacyIds=[];renderBuilds();$('#editor-title').textContent='Nueva propuesta';$('#attachments').hidden=true;$('#cancel').hidden=true;$('#compatibility').textContent='';locationFor(null);referenceTotal();markClean();}
 const sameIds=(a,b)=>a.length===b.length&&a.every(id=>b.includes(id));
@@ -58,8 +59,8 @@ async function open(id,{check=true}={}){
 }
 async function details(id,version=generation){
  const [files,history]=await Promise.all([api(`/api/proposals/${id}/files`),api(`/api/proposals/${id}/history`)]);if(version!==generation)return;
- $('#files').replaceChildren();$('#history').replaceChildren();
- for(const file of files){const li=node('li');const a=node('a',`${file.kind==='snapshot'?'Versión guardada':file.name} · ${Math.ceil(file.size/1024)} KB`);a.href=`/api/files/${file.id}`;a.setAttribute('download','');li.append(a,node('small',new Date(file.created_at).toLocaleString('es-CO')));$('#files').append(li);}
+ $('#files').replaceChildren();$('#history').replaceChildren();if(!files.length)$('#files').append(node('li','Sin documentos ni versiones todavía.'));if(!history.length)$('#history').append(node('li','Sin cambios registrados.'));
+ for(const file of files){const li=node('li');const a=node('a',`${file.kind==='snapshot'?'Versión guardada (JSON)':file.name} · ${size(file.size)}`);a.href=`/api/files/${file.id}`;a.setAttribute('download','');li.append(a,node('small',(file.kind==='snapshot'?'Versión automática':'Adjunto')+' · '+new Date(file.created_at).toLocaleString('es-CO')));$('#files').append(li);}
  for(const entry of history)$('#history').append(node('li',`${entry.action} · ${new Date(entry.created_at).toLocaleString('es-CO')}`));
 }
 function referenceTotal(){
@@ -89,8 +90,8 @@ $('#decision-search').addEventListener('input',renderList);$('#decision-sort').a
 $('#new').onclick=()=>{if(mayLeave()){reset();form.elements.title.focus();}};$('#cancel').onclick=()=>{if(mayLeave())reset();};
 $('#delete').onclick=()=>deleteDecision({id:selected,busy,dirty,ask:prompt=>confirm(prompt),remove:id=>api(`/api/proposals/${id}`,{method:'DELETE'}),onDeleted:async()=>{removeDraft();reset();await list();message('Propuesta eliminada.');},onError:message});
 $('#upload-form').addEventListener('submit',async event=>{
- event.preventDefault();const uploadForm=event.currentTarget;const submit=uploadForm.querySelector('button');submit.disabled=true;const id=selected,version=generation;
- try{message('Subiendo documento…');await api(`/api/proposals/${id}/files`,{method:'POST',body:new FormData(uploadForm)});await details(id,version);if(version===generation){uploadForm.reset();message('Documento guardado y asociado a tu propuesta.');}}catch(error){if(version===generation)message(error.message);}finally{submit.disabled=false;}
+ event.preventDefault();const uploadForm=event.currentTarget;const submit=uploadForm.querySelector('button');submit.disabled=true;$('#attachments').setAttribute('aria-busy','true');const id=selected,version=generation;
+ try{message('Subiendo documento…');await api(`/api/proposals/${id}/files`,{method:'POST',body:new FormData(uploadForm)});await details(id,version);if(version===generation){uploadForm.reset();message('Documento guardado y asociado a tu propuesta.');}}catch(error){if(version===generation)message(error.message);}finally{submit.disabled=false;$('#attachments').removeAttribute('aria-busy');}
 });
 $('#logout').onclick=async()=>{if(!mayLeave())return;try{await api('/api/auth/logout',{method:'POST'});removeDraft();dirty=false;location.replace('/login');}catch(error){message(error.message);}};
 window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
@@ -98,11 +99,17 @@ document.addEventListener('click',event=>{const a=event.target.closest?.('a');if
 function readDraft(){try{const draft=JSON.parse(sessionStorage.getItem(draftKey())||'null');if(draft?.version===1&&draft.userId===userId&&draft.values&&typeof draft.values.title==='string'&&draft.values.title.length<=100&&typeof draft.values.notes==='string'&&draft.values.notes.length<=4000&&['estudio','trabajo','juegos'].includes(draft.values.purpose)&&Array.isArray(draft.values.componentIds)&&draft.values.componentIds.every(Number.isSafeInteger))return draft;}catch{}return null;}
 $('#discard-draft').onclick=()=>{removeDraft();message('Borrador local descartado. Las decisiones guardadas siguen en tu cuenta.');};
 $('#recover-draft').onclick=async()=>{const draft=readDraft();if(!draft||!mayLeave())return;const validId=draft.id&&decisions.some(row=>row.id===draft.id);if(validId)await open(draft.id,{check:false});else reset();applyValues(draft.values);selected=validId?draft.id:null;$('#draft-notice').hidden=true;trackChanges();message('Borrador recuperado. Pulsa Guardar propuesta para guardarlo en tu cuenta.');};
+async function init(){
+$('#retry')?.remove();const area=document.querySelector('.dashboard-content');area.setAttribute('aria-busy','true');message('Cargando tu espacio…');
 try{
  const user=await api('/api/auth/me');userId=user.id;$('#greeting').textContent=`Hola, ${user.name}`;allComponents=await api('/api/components');
- builds=await api('/api/reference-builds');renderBuilds();
+ builds=await api('/api/builds');renderBuilds();
  referenceTotal();markClean();await list();
  const directId=new URL(location.href).searchParams.get('decision');if(directId&&/^[a-f0-9-]{36}$/.test(directId))await open(directId,{check:false});
  let incoming=false;try{const advice=JSON.parse(sessionStorage.getItem('criterio-advice')||'null');if(advice){reset();applyValues({...advice,componentIds:[]});sessionStorage.removeItem('criterio-advice');incoming=true;}const picks=JSON.parse(sessionStorage.getItem('fenixa-catalog-picks')||'[]');if(Array.isArray(picks)&&picks.length){chooseParts(picks);sessionStorage.removeItem('fenixa-catalog-picks');incoming=true;}}catch{}
  if(incoming){trackChanges();message('Tu propuesta está preparada como borrador. Revísala y guárdala en tu cuenta.');}else $('#draft-notice').hidden=!readDraft();
-}catch(error){message(error.message);}
+}catch(error){message(error.message);const retry=button('Reintentar',init);retry.id='retry';$('#feedback').after(retry);}finally{area.removeAttribute('aria-busy');}
+}
+init();
+// Al volver con el botón atrás (bfcache) se recarga: tras cerrar sesión no deben verse datos.
+window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});

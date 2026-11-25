@@ -10,8 +10,18 @@ export function pageRoutes(root) {
   router.get('/catalog', (req, res) => res.sendFile(client('catalog.html')));
   router.get('/docs.json', (req, res) => res.json(specification));
   router.use('/docs', swaggerUi.serve, swaggerUi.setup(specification));
-  router.get('/dashboard', (req, res) => (req.user ? res.sendFile(client('dashboard.html')) : res.redirect('/login')));
-  router.get(['/login', '/register'], (req, res) => (req.user ? res.redirect('/dashboard') : res.sendFile(client('auth.html'))));
+  // Páginas con sesión: sin caché, para que el botón atrás tras salir no muestre datos.
+  const noStore = (res, file) => { res.set('Cache-Control', 'no-store'); res.sendFile(client(file)); };
+  router.get('/dashboard', (req, res) => {
+    if (req.user) return noStore(res, 'dashboard.html');
+    res.set('Cache-Control', 'no-store').redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
+  });
+  router.get(['/login', '/register'], (req, res) => {
+    if (!req.user) return noStore(res, 'auth.html');
+    const next = String(req.query.next || '');
+    const safe = next.startsWith('/') && !next.startsWith('//') && !next.includes('\\') ? next : '/dashboard';
+    res.set('Cache-Control', 'no-store').redirect(safe);
+  });
   router.use('/assets', express.static(client('assets')));
   router.get('/', (req, res) => res.sendFile(client('index.html')));
   return router;

@@ -61,4 +61,10 @@ $('#compare').onclick=()=>{
 $('#close').onclick=()=>$('#dialog').close();
 for(const id of ['#use','#sort'])$(id).addEventListener('change',render);
 $('#budget').addEventListener('input',render);
-try{builds=await api('/api/builds');render();$('#status').textContent='Builds completas cargadas desde MySQL.';}catch(error){$('#status').textContent=error.message;}
+async function load(){
+ $('#retry')?.remove();$('#grid').setAttribute('aria-busy','true');$('#status').textContent='Cargando builds…';
+ try{builds=await api('/api/builds');render();$('#status').textContent='Builds completas cargadas desde MySQL.';}
+ catch(error){$('#status').textContent=error.message;const retry=action('Reintentar',load);retry.id='retry';$('#status').after(retry);}
+ finally{$('#grid').removeAttribute('aria-busy');}
+}
+load();
