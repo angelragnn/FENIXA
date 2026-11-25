@@ -5,7 +5,7 @@ import { requireUser } from '../middleware/auth.mjs';
 import { validate } from '../middleware/validate.mjs';
 import { schemas } from '../validation/schemas.mjs';
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 0, parts: 1 } });
+const upload = multer({ storage: multer.memoryStorage(), defParamCharset: 'utf8', limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 0, parts: 1 } });
 
 const withId = validate({ params: schemas.IdParams });
 const withProposal = validate({ body: schemas.ProposalInput });

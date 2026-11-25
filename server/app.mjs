@@ -29,14 +29,16 @@ export async function createApp(options = {}) {
   const env = getEnv();
   const db = await openStore(options.database);
   const filesDir = path.resolve(options.uploadDir || path.join(env.root, 'storage/files'));
-  // Almacenamiento de adjuntos: se puede inyectar (options.storage) o se elige por STORAGE_DRIVER; con uploadDir (pruebas) siempre es local.
+  // Almacenamiento de adjuntos: se puede inyectar (options.storage) o se elige con options.storageDriver (server.mjs lo pasa desde STORAGE_DRIVER).
+  // Respaldo para pruebas: si solo se da uploadDir, el driver es local.
   const storage = options.storage || createStorage({ driver: options.storageDriver || (options.uploadDir ? 'local' : env.storage.driver), filesDir, supabase: env.storage.supabase });
   const origin = options.origin || 'http://127.0.0.1:3002';
   // Servicios (lógica) -> controladores (req/res) -> rutas (URLs).
   const auth = createAuthService({ db });
-  const documents = createDocumentService({ db, storage });
+  const documents = createDocumentService({ db, storage, quiet: options.quiet });
   const proposals = createProposalService({ db, documents });
   const catalog = createCatalogService({ db });
+  const documentController = createDocumentController({ documents, proposals });
   const authController = createAuthController({ auth, secureCookies: options.secureCookies || false });
   const app = express();
   app.disable('x-powered-by');
@@ -49,8 +51,8 @@ export async function createApp(options = {}) {
   app.use('/api', apiLimiter(options));
   app.use(attachUser(auth));
   app.use('/api/auth', authRoutes(authController, authLimiter(options)));
-  app.use('/api/proposals', proposalRoutes(createProposalController({ proposals }), createDocumentController({ documents, proposals })));
-  app.use('/api/files', fileRoutes(createDocumentController({ documents, proposals })));
+  app.use('/api/proposals', proposalRoutes(createProposalController({ proposals }), documentController));
+  app.use('/api/files', fileRoutes(documentController));
   app.use('/api', catalogRoutes(createCatalogController({ catalog })));
   app.use(pageRoutes(env.root));
   app.use(notFound);

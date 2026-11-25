@@ -1,6 +1,6 @@
 // Controlador de adjuntos de una decisión y descarga de archivos.
+import contentDisposition from 'content-disposition';
 const INLINE_TYPES = new Set(['application/pdf', 'image/png', 'image/jpeg']);
-const asciiName = name => name.replace(/[^ -~]|["\\]/g, '_');
 
 export function createDocumentController({ documents, proposals }) {
   return {
@@ -25,7 +25,7 @@ export function createDocumentController({ documents, proposals }) {
       res.type(mime);
       // Solo los adjuntos (PDF/PNG/JPEG) se pueden ver en el navegador; las versiones JSON siempre se descargan.
       if (req.query.inline && kind !== 'snapshot' && INLINE_TYPES.has(mime)) {
-        res.set('Content-Disposition', `inline; filename="${asciiName(name)}"; filename*=UTF-8''${encodeURIComponent(name)}`);
+        res.set('Content-Disposition', contentDisposition.create(name, { type: 'inline' }));
         // CSP propia del recurso. "sandbox" rompe el visor de PDF de Chrome, así que solo se usa con imágenes.
         res.set('Content-Security-Policy', [
           "default-src 'none'", "img-src 'self'", "style-src 'unsafe-inline'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'",
@@ -33,7 +33,7 @@ export function createDocumentController({ documents, proposals }) {
         ].join('; '));
         res.set('Cache-Control', 'private, no-store');
       } else {
-        res.attachment(name);
+        res.set('Content-Disposition', contentDisposition.create(name, { type: 'attachment' }));
       }
       res.set('X-Content-Type-Options', 'nosniff');
       res.send(buffer);

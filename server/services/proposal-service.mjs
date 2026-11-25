@@ -62,7 +62,7 @@ export function createProposalService({ db, documents }) {
       return row;
     }).catch(async error => {
       // Compensación: la versión JSON ya estaba guardada aunque la transacción haya fallado.
-      if (document) await documents.storage.remove(document.filename).catch(() => {});
+      if (document) await documents.discard(document.filename);
       throw error;
     });
   }

@@ -10,6 +10,7 @@ const env = getEnv();
 const { app, db } = await createApp({
   origin: env.appOrigin,
   uploadDir: env.uploadDir,
+  storageDriver: env.storage.driver,
   secureCookies: env.secureCookies
 });
 const server = app.listen(env.port, env.host, () => console.log(`FENIXA full stack: http://${env.host}:${env.port}`));

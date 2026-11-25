@@ -13,7 +13,7 @@ function hasValidSignature(ext, b) {
   return b[0] === 255 && b[1] === 216 && b[2] === 255;
 }
 
-export function createDocumentService({ db, storage }) {
+export function createDocumentService({ db, storage, quiet = false }) {
   const now = () => new Date().toISOString();
 
   // Guarda el archivo con nombre UUID (put falla si existe) y registra la fila; si la fila falla, borra el archivo.
@@ -32,8 +32,12 @@ export function createDocumentService({ db, storage }) {
   }
 
   return {
-    storage,
     add,
+
+    // Compensación: borra un archivo ya escrito sin propagar errores.
+    discard(key) {
+      return storage.remove(key).catch(() => {});
+    },
 
     list(proposalId) {
       return db.prepare('SELECT id,name,mime,size,kind,created_at FROM documents WHERE proposal_id=? AND deleted=0 ORDER BY created_at DESC').all(proposalId);
@@ -48,6 +52,14 @@ export function createDocumentService({ db, storage }) {
       }
       const name = path.basename(file.originalname).replace(/[\x00-\x1f]/g, '').slice(0, 180);
       const doc = await add(userId, proposalId, name, TYPES[ext], b, 'upload');
+      try {
+        await db.prepare('INSERT INTO history(user_id,proposal_id,action,created_at) VALUES(?,?,?,?)').run(userId, proposalId, `Adjunto subido: ${name}`.slice(0, 100), now());
+      } catch (error) {
+        // Sin registro de historial no se deja un adjunto huérfano.
+        await db.prepare('DELETE FROM documents WHERE id=?').run(doc.id).catch(() => {});
+        await storage.remove(doc.filename).catch(() => {});
+        throw error;
+      }
       return { id: doc.id, name, size: b.length };
     },
 
@@ -57,7 +69,8 @@ export function createDocumentService({ db, storage }) {
       if (!doc) throw new HttpError(404, 'Archivo no encontrado.');
       const driver = doc.storage_driver || 'local';
       if (driver !== storage.describe()) {
-        throw new HttpError(503, `Este archivo está en el almacenamiento "${driver}"; activa STORAGE_DRIVER=${driver} para acceder a él.`);
+        if (!quiet) console.error(`Archivo ${doc.id} guardado en "${driver}" pero el driver activo es "${storage.describe()}"; activa STORAGE_DRIVER=${driver}.`);
+        throw new HttpError(503, 'El almacenamiento de archivos no está disponible. Intenta más tarde.');
       }
       return doc;
     },

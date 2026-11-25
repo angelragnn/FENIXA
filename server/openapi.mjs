@@ -37,7 +37,7 @@ export const specification = {
   paths: {
     '/api/advice': { post: operation('Propone hasta tres alternativas de referencia según presupuesto y uso', { 200: 'Alternativas de referencia' }, [400, 413], { requestBody: jsonBody('AdviceInput') }) },
     '/api/catalog': { get: operation('Catálogo original importado: fichas, imágenes y ofertas históricas', { 200: 'Catálogo completo' }) },
-    '/api/reference-builds': { get: operation('Builds de referencia del proyecto original', { 200: 'Builds de referencia' }, [401], secured) },
+    '/api/reference-builds': { get: { ...operation('Builds de referencia del proyecto original (legado: usa /api/builds)', { 200: 'Builds de referencia' }, [401], secured), deprecated: true } },
     '/api/builds': { get: operation('Catálogo público de builds completas con piezas, fotos y suma de referencia', { 200: 'Builds ordenadas por precio' }) },
     '/api/components': { get: operation('Componentes y categorías de referencia', { 200: 'Componentes' }, [401], secured) },
     '/health': { get: operation('Comprueba una consulta real a MySQL', { 200: 'MySQL responde' }) },
