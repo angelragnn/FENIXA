@@ -7,27 +7,26 @@ import { getEnv } from './env.mjs';
 async function runMigrations(pool) {
   const connection = await pool.getConnection();
   try {
-    await connection.query("SELECT GET_LOCK('fenixa_migrations', 30)");
+    const [[lock]] = await connection.query("SELECT GET_LOCK('fenixa_migrations', 30) AS ok");
+    if (Number(lock.ok) !== 1) throw new Error('No se pudo obtener el bloqueo de migraciones (fenixa_migrations): otro proceso está migrando. Inténtalo de nuevo.');
     const directory = new URL('./migrations/', import.meta.url);
     const files = (await readdir(directory)).filter(f => /^\d+_.+\.sql$/.test(f)).sort();
     const [applied] = await connection.query('SELECT version FROM schema_migrations');
     for (const file of files) {
       if (applied.some(row => row.version === file)) continue;
       const sql = (await readFile(new URL(file, directory), 'utf8')).replace(/^\s*--.*$/gm, '');
-      await connection.beginTransaction();
-      try {
-        for (const statement of sql.split(';').map(s => s.trim()).filter(Boolean)) {
-          // ALTER TABLE ... ADD COLUMN solo si la columna no existe (la base real ya tiene datos).
-          const add = /^ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)/i.exec(statement);
-          if (add) {
-            const [found] = await connection.query('SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?', [add[1], add[2]]);
-            if (found.length) continue;
-          }
-          await connection.query(statement);
+      // En MySQL los ALTER/CREATE hacen commit implícito: no hay transacción que proteja la migración.
+      // La idempotencia la da la comprobación en information_schema y el registro en schema_migrations al final.
+      for (const statement of sql.split(';').map(s => s.trim()).filter(Boolean)) {
+        // ALTER TABLE ... ADD COLUMN solo si la columna no existe (la base real ya tiene datos).
+        const add = /^ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)/i.exec(statement);
+        if (add) {
+          const [found] = await connection.query('SELECT 1 FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=? AND column_name=?', [add[1], add[2]]);
+          if (found.length) continue;
         }
-        await connection.query('INSERT INTO schema_migrations(version,applied_at) VALUES(?,?)', [file, new Date().toISOString()]);
-        await connection.commit();
-      } catch (error) { await connection.rollback(); throw error; }
+        await connection.query(statement);
+      }
+      await connection.query('INSERT INTO schema_migrations(version,applied_at) VALUES(?,?)', [file, new Date().toISOString()]);
     }
   } finally {
     await connection.query("SELECT RELEASE_LOCK('fenixa_migrations')").catch(() => {});
