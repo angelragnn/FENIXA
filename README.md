@@ -1,4 +1,4 @@
-# Criterio — Avance 2 de FENIXA
+# Criterio — Entrega final de FENIXA
 
 Asesor de compra de computadores para estudio, trabajo o juegos: presupuesto en COP → alternativas explicadas → decisión privada con cotizaciones. Nombre provisional; continúa la temática de PCs entregada en el Avance 1.
 
