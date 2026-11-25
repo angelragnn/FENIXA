@@ -8,10 +8,33 @@ const useVerb={estudio:'estudiar',trabajo:'trabajar y crear',juegos:'jugar'};
 const useNames={estudio:'Estudio',trabajo:'Trabajo y creación',juegos:'Juegos'};
 const statusNames={within_reference:'Dentro de la referencia',over_budget:'Requiere ampliar presupuesto',missing_prices:'Faltan precios',incomplete:'Propuesta incompleta',incompatible:'Conflicto pendiente'};
 function rememberNeeds(){try{sessionStorage.setItem('criterio-needs',JSON.stringify(Object.fromEntries(new FormData(form))));}catch{}}
-function changed(event){if(!event||['purpose','budget'].includes(event.target?.name))scheduleStage();revision++;const hadResults=!$('#advice-results').hidden;$('#advice-results').hidden=true;$('#advisor-status').textContent=hadResults?'Cambiaste tus datos. Pulsa Ver mis opciones para comparar otra vez.':'';rememberNeeds();updatePresets();}
+function changed(event){if(event?.target?.name==='purpose')applyRange();if(!event||['purpose','budget'].includes(event.target?.name)||event.target?.id==='budget-range')scheduleStage();syncRange();revision++;const hadResults=!$('#advice-results').hidden;$('#advice-results').hidden=true;$('#advisor-status').textContent=hadResults?'Cambiaste tus datos. Pulsa Ver mis opciones para comparar otra vez.':'';rememberNeeds();updatePresets();}
 function updatePresets(){for(const button of form.querySelectorAll('[data-budget]'))button.setAttribute('aria-pressed',String(Number(button.dataset.budget)===Number(form.elements.budget.value)));}
 form.addEventListener('input',changed);
-for(const button of form.querySelectorAll('[data-budget]'))button.onclick=()=>{form.elements.budget.value=button.dataset.budget;changed();};
+form.querySelector('.budget-presets').addEventListener('click',event=>{const button=event.target.closest('[data-budget]');if(!button)return;form.elements.budget.value=button.dataset.budget;changed();});
+// Deslizador y botones rápidos por uso: van de la build más barata a la más cara de ese uso,
+// porque por encima del máximo el asesor siempre propondría la misma build.
+const range=$('#budget-range');let ranges={};
+const shortMoney=n=>'$'+(n/1e6).toLocaleString('es-CO',{maximumFractionDigits:1})+' M';
+range.addEventListener('input',()=>{form.elements.budget.value=range.value;});
+function syncRange(){const value=Number(form.elements.budget.value);if(value)range.value=String(Math.min(Math.max(value,Number(range.min)),Number(range.max)));}
+function applyRange(){
+ const purpose=form.elements.purpose.value,r=ranges[purpose];if(!r)return;
+ range.min=r.min;range.max=r.max;
+ if(Number(form.elements.budget.value)>r.max)form.elements.budget.value=r.max;
+ syncRange();$('#range-hint').textContent=`Builds para ${useVerb[purpose]}: de ${money(r.cheapest)} a ${money(r.top)}`;
+ const box=form.querySelector('.budget-presets');box.style.setProperty('--presets',r.presets.length);
+ box.replaceChildren(...r.presets.map(v=>{const b=node('button',shortMoney(v));b.type='button';b.dataset.budget=v;return b;}));updatePresets();
+}
+function buildRanges(){
+ for(const use of Object.keys(useVerb)){
+  const totals=catalogBuilds.filter(b=>b.use===use).map(b=>b.total).sort((a,b)=>a-b);if(!totals.length)continue;
+  const up=n=>Math.ceil(n/100000)*100000;let presets=[...new Set(totals.map(up))];
+  if(presets.length>5)presets=[0,1,2,3,4].map(i=>presets[Math.round(i*(presets.length-1)/4)]);
+  ranges[use]={cheapest:totals[0],top:totals.at(-1),min:Math.floor(totals[0]/100000)*100000-100000,max:up(totals.at(-1)),presets};
+ }
+ applyRange();
+}
 try{const saved=JSON.parse(sessionStorage.getItem('criterio-needs')||'null');if(saved&&Number(saved.budget)>=100000&&Number(saved.budget)<=100000000){form.elements.budget.value=saved.budget;if(useNames[saved.purpose])form.elements.purpose.value=saved.purpose;if(typeof saved.programs==='string')form.elements.programs.value=saved.programs.slice(0,800);}}catch{}
 updatePresets();
 function comparison(options){
@@ -70,4 +93,4 @@ async function showStage(){
  if(!$('#stage-parts').children.length||matchMedia('(prefers-reduced-motion: reduce)').matches){paint();return;}
  $('#build-stage').classList.add('is-leaving');stageTimer=setTimeout(paint,140);
 }
-try{catalogBuilds=await api('/api/builds');const totals=catalogBuilds.map(b=>b.total);$('#hero-facts').textContent=`${catalogBuilds.length} builds completas · de ${money(Math.min(...totals))} a ${money(Math.max(...totals))} · precios de referencia, no de hoy`;showStage();}catch{$('#build-stage').hidden=true;}
+try{catalogBuilds=await api('/api/builds');const totals=catalogBuilds.map(b=>b.total);$('#hero-facts').textContent=`${catalogBuilds.length} builds completas · de ${money(Math.min(...totals))} a ${money(Math.max(...totals))} · precios de referencia, no de hoy`;buildRanges();showStage();}catch{$('#build-stage').hidden=true;}

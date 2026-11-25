@@ -21,6 +21,7 @@
       <label class="budget-field">Presupuesto máximo
         <span class="money-input"><span aria-hidden="true">$</span><input name="budget" type="number" inputmode="numeric" enterkeyhint="done" min="100000" max="100000000" step="1" value="3500000" required aria-describedby="budget-help"><span aria-hidden="true">COP</span></span>
       </label>
+      <div class="budget-range"><input id="budget-range" type="range" min="2200000" max="3100000" step="50000" value="3000000" aria-label="Ajustar presupuesto" aria-describedby="range-hint"><p id="range-hint" class="range-hint"></p></div>
       <div class="budget-presets" role="group" aria-label="Presupuestos de ejemplo"><button type="button" data-budget="2500000">$2,5 M</button><button type="button" data-budget="4000000">$4 M</button><button type="button" data-budget="6500000">$6,5 M</button><button type="button" data-budget="9500000">$9,5 M</button></div>
       <p id="budget-help" class="sr-only">Entre 100.000 y 100 millones de pesos.</p>
       <fieldset>
