@@ -1,6 +1,5 @@
 // Servicio de adjuntos: archivos en disco + metadatos en MySQL, con compensación si falla la base.
 import { createHash, randomUUID } from 'node:crypto';
-import { writeFileSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import { HttpError } from '../middleware/errors.mjs';
 
@@ -14,26 +13,26 @@ function hasValidSignature(ext, b) {
   return b[0] === 255 && b[1] === 216 && b[2] === 255;
 }
 
-export function createDocumentService({ db, filesDir }) {
+export function createDocumentService({ db, storage }) {
   const now = () => new Date().toISOString();
 
-  // Escribe el archivo con nombre UUID y registra la fila; si la fila falla, borra el archivo.
+  // Guarda el archivo con nombre UUID (put falla si existe) y registra la fila; si la fila falla, borra el archivo.
   async function add(userId, proposalId, name, mime, buffer, kind) {
     const id = randomUUID();
     const filename = `${id}${kind === 'snapshot' ? '.json' : path.extname(name).toLowerCase()}`;
-    writeFileSync(path.join(filesDir, filename), buffer, { flag: 'wx' });
+    await storage.put(filename, buffer, mime);
     try {
-      await db.prepare('INSERT INTO documents(id,user_id,proposal_id,name,mime,size,path,kind,created_at,sha256) VALUES(?,?,?,?,?,?,?,?,?,?)')
-        .run(id, userId, proposalId, name, mime, buffer.length, filename, kind, now(), createHash('sha256').update(buffer).digest('hex'));
+      await db.prepare('INSERT INTO documents(id,user_id,proposal_id,name,mime,size,path,kind,created_at,sha256,storage_driver) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+        .run(id, userId, proposalId, name, mime, buffer.length, filename, kind, now(), createHash('sha256').update(buffer).digest('hex'), storage.describe());
     } catch (error) {
-      unlinkSync(path.join(filesDir, filename));
+      await storage.remove(filename).catch(() => {});
       throw error;
     }
     return { id, filename };
   }
 
   return {
-    filesDir,
+    storage,
     add,
 
     list(proposalId) {
@@ -52,11 +51,20 @@ export function createDocumentService({ db, filesDir }) {
       return { id: doc.id, name, size: b.length };
     },
 
-    // Devuelve ruta y nombre solo si el archivo es del usuario y su decisión no está eliminada.
-    async locate(userId, fileId) {
+    // Devuelve el contenido solo si el archivo es del usuario y su decisión no está eliminada.
+    async read(userId, fileId) {
       const doc = await db.prepare('SELECT d.* FROM documents d JOIN proposals p ON p.id=d.proposal_id WHERE d.id=? AND d.user_id=? AND d.deleted=0 AND p.deleted=0').get(fileId, userId);
       if (!doc) throw new HttpError(404, 'Archivo no encontrado.');
-      return { filePath: path.join(filesDir, doc.path), name: doc.name };
+      const driver = doc.storage_driver || 'local';
+      if (driver !== storage.describe()) {
+        throw new HttpError(503, `Este archivo está en el almacenamiento "${driver}"; activa STORAGE_DRIVER=${driver} para descargarlo.`);
+      }
+      try {
+        return { buffer: await storage.get(doc.path), name: doc.name, mime: doc.mime };
+      } catch (error) {
+        if (error.code === 'NOT_FOUND') throw new HttpError(404, 'Archivo no encontrado.');
+        throw error;
+      }
     }
   };
 }

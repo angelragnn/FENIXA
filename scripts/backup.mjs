@@ -13,7 +13,11 @@ function filename(directory,name){
   return path.join(directory,name);
 }
 
+const REMOTE_MSG='Respaldo de archivos solo disponible con driver local (STORAGE_DRIVER=supabase). Usa las copias del propio Supabase para los adjuntos.';
+const remoteStorage=()=>(process.env.STORAGE_DRIVER||'local').trim()==='supabase';
+
 export async function backup(){
+  if(remoteStorage())throw Error(REMOTE_MSG);
   const connection=await mysql.createConnection(config());
   const id=new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID().slice(0,8);
   const directory=path.join(root,'storage/backups',id);
@@ -43,6 +47,7 @@ export async function backup(){
 }
 
 export async function restoreCheck(directory){
+  if(remoteStorage())throw Error(REMOTE_MSG);
   const manifest=JSON.parse(await readFile(path.join(directory,'manifest.json'),'utf8'));
   const bytes=await readFile(path.join(directory,'database.json'));
   if(manifest.version!==1||hash(bytes)!==manifest.databaseSha256)throw Error('Respaldo incompleto o alterado.');
@@ -95,7 +100,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
       console.log(JSON.stringify(await restoreCheck(latest.directory),null,2));
     }else console.log(JSON.stringify(await backup(),null,2));
   } catch(error){
-    if(error.code==='ER_NO_SUCH_TABLE')console.error('Faltan las tablas de la base principal. Ejecuta npm start una vez para crearlas y vuelve a intentarlo.');
+    if(error.message===REMOTE_MSG)console.error(REMOTE_MSG);
+    else if(error.code==='ER_NO_SUCH_TABLE')console.error('Faltan las tablas de la base principal. Ejecuta npm start una vez para crearlas y vuelve a intentarlo.');
     else if(error.code==='ENOENT'&&String(error.path).endsWith('latest.json'))console.error('Todavía no hay respaldos. Ejecuta primero npm run backup.');
     else throw error;
     process.exitCode=1;

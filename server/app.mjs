@@ -2,9 +2,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { getEnv } from './env.mjs';
+import { createStorage } from './storage/index.mjs';
 import { openStore } from './store.mjs';
 import { attachUser } from './middleware/auth.mjs';
 import { originControl } from './middleware/origin.mjs';
@@ -29,11 +29,12 @@ export async function createApp(options = {}) {
   const env = getEnv();
   const db = await openStore(options.database);
   const filesDir = path.resolve(options.uploadDir || path.join(env.root, 'storage/files'));
-  mkdirSync(filesDir, { recursive: true });
+  // Almacenamiento de adjuntos: se puede inyectar (options.storage) o se elige por STORAGE_DRIVER; con uploadDir (pruebas) siempre es local.
+  const storage = options.storage || createStorage({ driver: options.storageDriver || (options.uploadDir ? 'local' : env.storage.driver), filesDir, supabase: env.storage.supabase });
   const origin = options.origin || 'http://127.0.0.1:3002';
   // Servicios (lógica) -> controladores (req/res) -> rutas (URLs).
   const auth = createAuthService({ db });
-  const documents = createDocumentService({ db, filesDir });
+  const documents = createDocumentService({ db, storage });
   const proposals = createProposalService({ db, documents });
   const catalog = createCatalogService({ db });
   const authController = createAuthController({ auth, secureCookies: options.secureCookies || false });

@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 process.loadEnvFile(path.join(root,'.env'));
+if((process.env.STORAGE_DRIVER||'local').trim()==='supabase'){console.error('Auditoría de archivos solo disponible con driver local (STORAGE_DRIVER=supabase).');process.exit(1);}
 const directory=path.resolve(root,process.env.UPLOAD_DIR||'storage/files');
 const connection=await mysql.createConnection({host:process.env.MYSQL_HOST,port:Number(process.env.MYSQL_PORT||3306),user:process.env.MYSQL_USER,password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE});
 try {

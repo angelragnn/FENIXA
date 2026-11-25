@@ -2,7 +2,7 @@
 
 Esta guía publica Criterio en un servidor propio con Nginx, PM2 y MySQL local.
 
-> Nota sobre variables: la base de datos usa `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE` (ver `.env.example`). `TRUST_PROXY` y las variables de Supabase están previstas pero pueden no estar implementadas todavía en `server/`: confirma en el código antes de depender de ellas.
+> Nota sobre variables: la base de datos usa `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE` (ver `.env.example`). `TRUST_PROXY`, `STORAGE_DRIVER` y las variables `SUPABASE_*` también están implementadas en `server/env.mjs`.
 
 ## 1. Servidor y usuario
 
@@ -124,18 +124,28 @@ Actualizar: `git pull && npm ci --omit=dev && pm2 restart criterio`. Respaldos: 
 
 A cambio, en el VPS tú mantienes el servidor: actualizaciones, seguridad y respaldos con `npm run backup`.
 
-## Opción Supabase Storage (en preparación)
+## Opción Supabase Storage
 
-Aún no está activa. Cuando se implemente, se activará con:
+Los adjuntos pueden guardarse en Supabase Storage en lugar del disco (útil en hosting con sistema de archivos efímero). MySQL sigue guardando datos y metadatos; solo cambia dónde viven los archivos. Se elige con `STORAGE_DRIVER` (`local` por defecto).
+
+1. En Supabase: Storage > New bucket, con un nombre (por ejemplo `adjuntos`) y **Public bucket desactivado** (bucket privado).
+2. En Project Settings > API copia la URL del proyecto y la clave `service_role`.
+3. En el `.env` del servidor:
 
 ```
 STORAGE_DRIVER=supabase
 SUPABASE_URL=https://TU-PROYECTO.supabase.co
 SUPABASE_SERVICE_KEY=...   # solo servidor
-SUPABASE_BUCKET=nombre-del-bucket
+SUPABASE_BUCKET=adjuntos
 ```
 
-`SUPABASE_SERVICE_KEY` da acceso total: va solo en el `.env` del servidor, nunca en `client/` ni en Git.
+Si `STORAGE_DRIVER=supabase` y falta alguna de las tres variables, el servidor se niega a arrancar y dice cuál.
+
+`SUPABASE_SERVICE_KEY` da acceso total: va solo en el `.env` del servidor, nunca en `client/` ni en Git. El navegador nunca la recibe ni accede al bucket: las descargas pasan por `GET /api/files/:id`, que comprueba el dueño y reenvía el archivo.
+
+Cada documento registra en `documents.storage_driver` dónde se guardó. Si cambias de driver, los archivos antiguos no se mueven solos: la descarga responde con un aviso hasta que reactives el driver original o los migres.
+
+Limitaciones: `npm run backup`, `restore:check` y `audit:files` solo funcionan con el driver local y avisan si `STORAGE_DRIVER=supabase` (para los adjuntos usa las copias de Supabase). La integración se probó con `fetch` simulado, no contra un proyecto real.
 
 ## Alternativa sin nube: túnel temporal
 

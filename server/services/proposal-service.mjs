@@ -1,7 +1,5 @@
 // Servicio de decisiones: decisión + componentes + versión JSON + historial, todo en una transacción.
 import { randomUUID } from 'node:crypto';
-import { rmSync } from 'node:fs';
-import path from 'node:path';
 import { checkPart, asPart } from '../../client/assets/compatibility.js';
 import { HttpError } from '../middleware/errors.mjs';
 
@@ -62,8 +60,9 @@ export function createProposalService({ db, documents }) {
       document = await documents.add(userId, row.id, 'propuesta.json', 'application/json', Buffer.from(JSON.stringify(row, null, 2)), 'snapshot');
       await db.prepare('INSERT INTO history(user_id,proposal_id,action,created_at) VALUES(?,?,?,?)').run(userId, row.id, existing ? 'Propuesta actualizada' : 'Propuesta creada', stamp);
       return row;
-    }).catch(error => {
-      if (document) rmSync(path.join(documents.filesDir, document.filename), { force: true });
+    }).catch(async error => {
+      // Compensación: la versión JSON ya estaba guardada aunque la transacción haya fallado.
+      if (document) await documents.storage.remove(document.filename).catch(() => {});
       throw error;
     });
   }

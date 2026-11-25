@@ -17,8 +17,11 @@ export function createDocumentController({ documents, proposals }) {
     },
 
     async download(req, res) {
-      const { filePath, name } = await documents.locate(req.user.id, req.params.fileId);
-      res.download(filePath, name);
+      // El archivo pasa por el servidor (que ya comprobó el dueño): el navegador nunca ve el almacenamiento.
+      const { buffer, name, mime } = await documents.read(req.user.id, req.params.fileId);
+      res.attachment(name);
+      res.type(mime);
+      res.send(buffer);
     }
   };
 }
