@@ -15,7 +15,9 @@ form.addEventListener('submit', async event => {
   event.preventDefault(); button.disabled = true; form.setAttribute('aria-busy','true');
   const feedback = document.querySelector('#feedback'); feedback.textContent = 'Comprobando…';
   try {
-    await api(`/api/auth/${register ? 'register' : 'login'}`, {method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(form)))});
+    // Al entrar, el campo oculto «name» no se envía: la API rechaza campos que no espera.
+    const data = Object.fromEntries(new FormData(form)); if (!register) delete data.name;
+    await api(`/api/auth/${register ? 'register' : 'login'}`, {method:'POST',body:JSON.stringify(data)});
     location.assign(next);
   } catch(error) { feedback.textContent = error.message; }
   finally { button.disabled = false; form.removeAttribute('aria-busy'); }
